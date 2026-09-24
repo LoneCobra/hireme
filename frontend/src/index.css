@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,22 +10,34 @@
 
 body {
     margin: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #f6f7fb;
+    background: #ffffff;
 }
 
 h1, h2, h3, h4, .font-head {
-    font-family: 'Poppins', 'Inter', sans-serif;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* gradient text used for section headings */
+.grad-text {
+    background: linear-gradient(90deg, #2c0eee 0%, #7b2ff7 50%, #f61d25 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 @keyframes marquee {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
 }
-.animate-marquee { animation: marquee 28s linear infinite; }
+.animate-marquee { animation: marquee 26s linear infinite; }
 .marquee-pause:hover .animate-marquee { animation-play-state: paused; }
+
+/* blinking caret for hero heading */
+@keyframes caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+.caret { animation: caret 1s step-end infinite; }
 
 .thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }

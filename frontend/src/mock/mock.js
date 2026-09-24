@@ -1,46 +1,57 @@
 // ============ MOCK DATA (frontend-only teaser) ============
-// All data below is MOCKED. Replace with real API during backend phase.
+// All data below is MOCKED. Real hiremejobs.in CDN assets used for pixel-accuracy.
+
+const CDN = "https://apidata.hiremejobs.in/uploads";
+
+// ---------- HEADER NAV ----------
+export const navItems = ["Jobs", "Remote Jobs", "Learn", "Services", "Career"];
 
 // ---------- HOMEPAGE ----------
 export const popularCities = [
-  { name: "Delhi", image: "https://images.unsplash.com/photo-1706545604042-399792bd8a04?crop=entropy&cs=srgb&fm=jpg&w=600&q=80" },
-  { name: "Kolkata", image: "https://images.unsplash.com/photo-1679249010086-b8a932c8cafc?crop=entropy&cs=srgb&fm=jpg&w=600&q=80" },
-  { name: "Hyderabad", image: "https://images.pexels.com/photos/5414582/pexels-photo-5414582.jpeg?auto=compress&cs=tinysrgb&w=600" },
-  { name: "Chennai", image: "https://images.unsplash.com/photo-1672767644202-a2148c00739f?crop=entropy&cs=srgb&fm=jpg&w=600&q=80" },
-  { name: "Pune", image: "https://images.unsplash.com/photo-1552133457-ce1d2d33cdfb?crop=entropy&cs=srgb&fm=jpg&w=600&q=80" },
-  { name: "Mumbai", image: "https://images.pexels.com/photos/36171603/pexels-photo-36171603.jpeg?auto=compress&cs=tinysrgb&w=600" },
-  { name: "Bengaluru (Bangalore)", image: "https://images.pexels.com/photos/9305033/pexels-photo-9305033.jpeg?auto=compress&cs=tinysrgb&w=600" },
-  { name: "Ahmedabad", image: "https://images.unsplash.com/photo-1653299311171-31939b3b84b0?crop=entropy&cs=srgb&fm=jpg&w=600&q=80" },
+  { name: "Delhi", image: `${CDN}/1790190449993-Delhi.png` },
+  { name: "Kolkata", image: `${CDN}/1790190469638-Kolkata.png` },
+  { name: "Hyderabad", image: `${CDN}/1790190007500-Hyderabad-(1).png` },
+  { name: "Chennai", image: `${CDN}/1790190437075-Chennai.png` },
+  { name: "Pune", image: `${CDN}/1790190498685-Pune.png` },
+  { name: "Mumbai", image: `${CDN}/1790190483234-Mumbai.png` },
+  { name: "Bengaluru (Bangalore)", image: `${CDN}/1790190422646-Banglore.png` },
+  { name: "Ahmedabad", image: `${CDN}/1790190402072-Ahmedbad.png` },
 ];
 
 export const featuredCompanies = [
-  { name: "Maxgen Technologies", initials: "MX", color: "#2c0eee" },
-  { name: "HealthPlus Shekhawat", initials: "HP", color: "#f61d25" },
-  { name: "TechNova Systems", initials: "TN", color: "#0ea5e9" },
-  { name: "BrightPath Solutions", initials: "BP", color: "#16a34a" },
-  { name: "Quantum Labs", initials: "QL", color: "#9333ea" },
-  { name: "Skyline Corp", initials: "SC", color: "#ea580c" },
-  { name: "Vertex Digital", initials: "VD", color: "#0d9488" },
-  { name: "PrimeEdge Inc", initials: "PE", color: "#be123c" },
+  { name: "Maxgen Technologies", logo: `${CDN}/1790240944683-Logo-without-bg.png` },
+  { name: "HealthPlus Shekhawat", logo: `${CDN}/1790224566991-1600w-aC_CDOutGYs.webp` },
+  { name: "Maxgen Technologies", logo: `${CDN}/1790240944683-Logo-without-bg.png` },
+  { name: "HealthPlus Shekhawat", logo: `${CDN}/1790224566991-1600w-aC_CDOutGYs.webp` },
+  { name: "Maxgen Technologies", logo: `${CDN}/1790240944683-Logo-without-bg.png` },
+  { name: "HealthPlus Shekhawat", logo: `${CDN}/1790224566991-1600w-aC_CDOutGYs.webp` },
 ];
 
 export const popularCategories = [
-  { name: "Software", icon: "Code2", jobs: 31 },
-  { name: "Information Technology", icon: "MonitorSmartphone", jobs: 15 },
-  { name: "Banking / Financial Services", icon: "Landmark", jobs: 12 },
-  { name: "Sales and Marketing", icon: "TrendingUp", jobs: 9 },
-  { name: "Artificial Intelligence", icon: "BrainCircuit", jobs: 7 },
-  { name: "Consumer Electronics", icon: "CircuitBoard", jobs: 5 },
+  { name: "Software", icon: `${CDN}/1790190913237-software.gif` },
+  { name: "Information Technology", icon: `${CDN}/1790190898037-responsive.gif` },
+  { name: "Banking / Financial Services", icon: `${CDN}/1790191380735-bank.gif` },
+  { name: "Sales And Marketing", icon: `${CDN}/1790191279995-sales-enablement.gif` },
+  { name: "Artificial Intelligence", icon: `${CDN}/1790191187895-ai-image.gif` },
+  { name: "Consumer Electronics", icon: `${CDN}/1790190959144-circuit-board.gif` },
 ];
+
+export const heroImage = "https://hiremejobs.in/_next/static/media/hero.1849i_3caj-8v.png";
+export const ctaImage = "https://hiremejobs.in/_next/static/media/CTA.2nhl1b4x9nsm4.png";
 
 export const experienceOptions = [
   "Fresher", "0-1 Years", "1-3 Years", "3-5 Years", "5-8 Years", "8-10 Years", "10+ Years",
 ];
 
+export const skillIndustries = [
+  "Software", "Information Technology", "Banking / Financial Services",
+  "Sales and Marketing", "Artificial Intelligence", "Consumer Electronics",
+];
+
 export const skillsByIndustry = {
   "Software": [
-    { name: "HTML5/CSS3", jobs: 5 }, { name: "React.js", jobs: 3 }, { name: "Git", jobs: 3 },
-    { name: "JavaScript (ES6+)", jobs: 3 }, { name: "AWS", jobs: 3 }, { name: "Node.js", jobs: 3 },
+    { name: "HTML5/CSS3", jobs: 5 }, { name: "React.Js", jobs: 3 }, { name: "Git", jobs: 3 },
+    { name: "JavaScript (ES6+)", jobs: 3 }, { name: "Node.Js", jobs: 3 }, { name: "Redux", jobs: 2 },
   ],
   "Information Technology": [
     { name: "DevOps", jobs: 4 }, { name: "Docker", jobs: 2 }, { name: "Kubernetes", jobs: 2 },
@@ -64,14 +75,24 @@ export const skillsByIndustry = {
   ],
 };
 
-export const trendingJobs = [
-  "React Developer", "Data Analyst", "DevOps Engineer", "UI/UX Designer", "Lecturer",
-];
+export const vacancyTabs = ["Skills", "Location", "Industry", "Roles", "Company"];
 
-export const footerLinks = {
-  "For Candidates": ["Browse Jobs", "Browse Companies", "Job Alerts", "Create Profile", "Career Advice"],
-  "For Employers": ["Post a Job", "Browse Candidates", "Pricing Plans", "Recruiter Login", "Resources"],
-  "Company": ["About Us", "Contact Us", "Blog", "Privacy Policy", "Terms of Service"],
+export const vacancyChips = {
+  Skills: ["HTML5/CSS3", "React.Js", "Node.Js", "Python", "AWS", "Git", "DevOps", "Java", "SQL", "Redux"],
+  Location: ["Delhi", "Mumbai", "Bengaluru", "Chennai", "Pune", "Hyderabad", "Kolkata", "Ahmedabad"],
+  Industry: ["Software", "Information Technology", "Banking / Financial Services", "Sales and Marketing", "Artificial Intelligence", "Consumer Electronics"],
+  Roles: ["Software Engineer", "Data Analyst", "DevOps Engineer", "UI/UX Designer", "Product Manager", "Lecturer"],
+  Company: ["Maxgen Technologies", "HealthPlus Shekhawat", "TechNova", "Quantum Labs", "Vertex Digital"],
+};
+
+// ---------- FOOTER ----------
+export const footerColumns = {
+  "Job Categories": ["Jobs By Skills", "Jobs By Education", "Jobs By Location", "Jobs By Function", "Jobs By Industry"],
+  "Software Jobs": ["Web Development", "Data Scientist", "SAP Consaltant", "Generative AI", "Digital marketing"],
+  "Jobs by Department": ["Human Resources", "Sales & Marketing", "Accounting", "Call Center", "Electrical Engineering"],
+  "Employers": ["Employer Login", "Job Posting", "Access Resume Database", "Sign In", "Buy Online"],
+  "Job Seekers": ["Job Seekers Login", "Upload Resume", "Search Tips", "Find Companies"],
+  "Company Info": ["About Us", "Contact Us", "Send Feedback"],
 };
 
 // ---------- ADMIN AUTH ----------
