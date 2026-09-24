@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Plus, Search, Eye, Pencil, Trash2, GraduationCap } from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Plus, Search, Eye, Pencil, Trash2, GraduationCap, Loader2 } from "lucide-react";
 import AdminLayout from "../AdminLayout";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -14,19 +14,25 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "../../../components/ui/alert-dialog";
 import { useToast } from "../../../hooks/use-toast";
-import { educationCategoriesSeed } from "../../../mock/mock";
-
-const today = "24 Sep 2026";
+import api from "../../../lib/api";
 
 export default function EducationCategories() {
   const { toast } = useToast();
-  const [rows, setRows] = useState(educationCategoriesSeed);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState({ name: "", status: true, trending: false });
+
+  const load = () => {
+    setLoading(true);
+    api.get("/education-categories").then((res) => setRows(res.data)).finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); }, []);
 
   const counts = useMemo(() => ({
     all: rows.length,
@@ -43,25 +49,49 @@ export default function EducationCategories() {
   const openAdd = () => { setEditing(null); setForm({ name: "", status: true, trending: false }); setDialogOpen(true); };
   const openEdit = (r) => { setEditing(r); setForm({ name: r.name, status: r.status, trending: r.trending }); setDialogOpen(true); };
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim()) { toast({ title: "Category name required", variant: "destructive" }); return; }
-    if (editing) {
-      setRows(rows.map((r) => r.id === editing.id ? { ...r, ...form, updatedBy: "admin", updatedAt: today } : r));
-      toast({ title: "Category updated" });
-    } else {
-      setRows([{ id: Date.now(), ...form, updatedBy: "admin", updatedAt: today }, ...rows]);
-      toast({ title: "Category created" });
+    setSaving(true);
+    try {
+      if (editing) {
+        const { data } = await api.put(`/education-categories/${editing.id}`, form);
+        setRows(rows.map((r) => (r.id === editing.id ? data : r)));
+        toast({ title: "Category updated" });
+      } else {
+        const { data } = await api.post("/education-categories", form);
+        setRows([data, ...rows]);
+        toast({ title: "Category created" });
+      }
+      setDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Something went wrong", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    setDialogOpen(false);
   };
 
-  const toggleField = (id, field) =>
-    setRows(rows.map((r) => r.id === id ? { ...r, [field]: !r[field], updatedBy: "admin", updatedAt: today } : r));
+  const toggleField = async (r, field) => {
+    const updated = { ...r, [field]: !r[field] };
+    setRows(rows.map((x) => (x.id === r.id ? updated : x)));
+    try {
+      const { data } = await api.put(`/education-categories/${r.id}`, { [field]: !r[field] });
+      setRows((prev) => prev.map((x) => (x.id === r.id ? data : x)));
+    } catch (e) {
+      setRows(rows);
+      toast({ title: "Update failed", variant: "destructive" });
+    }
+  };
 
-  const confirmDelete = () => {
-    setRows(rows.filter((r) => r.id !== deleteId));
-    setDeleteId(null);
-    toast({ title: "Category deleted" });
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/education-categories/${deleteId}`);
+      setRows(rows.filter((r) => r.id !== deleteId));
+      toast({ title: "Category deleted" });
+    } catch (e) {
+      toast({ title: "Delete failed", variant: "destructive" });
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -112,10 +142,10 @@ export default function EducationCategories() {
                   <td className="py-4 pr-4 text-gray-400">{idx + 1}</td>
                   <td className="py-4 pr-4 font-medium text-gray-800">{r.name}</td>
                   <td className="py-4 pr-4">
-                    <Switch checked={r.trending} onCheckedChange={() => toggleField(r.id, "trending")} className="data-[state=checked]:bg-[#f5b301]" />
+                    <Switch checked={r.trending} onCheckedChange={() => toggleField(r, "trending")} className="data-[state=checked]:bg-[#f5b301]" />
                   </td>
                   <td className="py-4 pr-4">
-                    <Switch checked={r.status} onCheckedChange={() => toggleField(r.id, "status")} className="data-[state=checked]:bg-[#2c0eee]" />
+                    <Switch checked={r.status} onCheckedChange={() => toggleField(r, "status")} className="data-[state=checked]:bg-[#2c0eee]" />
                   </td>
                   <td className="py-4 pr-4 text-gray-600">{r.updatedBy}</td>
                   <td className="py-4 pr-4 text-gray-600">{r.updatedAt}</td>
@@ -129,7 +159,7 @@ export default function EducationCategories() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="py-10 text-center text-gray-400">No categories found</td></tr>
+                <tr><td colSpan={7} className="py-10 text-center text-gray-400">{loading ? "Loading…" : "No categories found"}</td></tr>
               )}
             </tbody>
           </table>
@@ -164,7 +194,9 @@ export default function EducationCategories() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save} className="bg-[#2c0eee] hover:bg-[#2408c9] text-white font-semibold">{editing ? "Save Changes" : "Create Category"}</Button>
+            <Button onClick={save} disabled={saving} className="bg-[#2c0eee] hover:bg-[#2408c9] text-white font-semibold">
+              {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</> : (editing ? "Save Changes" : "Create Category")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

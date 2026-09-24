@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { useToast } from "../../hooks/use-toast";
-import { SUPERADMIN } from "../../mock/mock";
+import api from "../../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,19 +16,24 @@ export default function Login() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { data } = await api.post("/auth/login", { email: email.trim(), password });
+      localStorage.setItem("hireme_token", data.access_token);
+      localStorage.setItem("hireme_admin", JSON.stringify(data.user));
+      toast({ title: "Welcome back!", description: "Logged in as Super Admin." });
+      navigate("/admin/dashboard");
+    } catch (err) {
+      toast({
+        title: "Login failed",
+        description: err?.response?.data?.detail || "Invalid email or password.",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-      if (email.trim().toLowerCase() === SUPERADMIN.email && password === SUPERADMIN.password) {
-        localStorage.setItem("hireme_admin", JSON.stringify({ name: SUPERADMIN.name, email: SUPERADMIN.email, role: SUPERADMIN.role }));
-        toast({ title: "Welcome back!", description: "Logged in as Super Admin." });
-        navigate("/admin/dashboard");
-      } else {
-        toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
-      }
-    }, 700);
+    }
   };
 
   return (

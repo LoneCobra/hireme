@@ -9,7 +9,7 @@ export default function Logo({ light = false, className = "" }) {
     <img
       src={light ? LOGO_WHITE : LOGO_COLOR}
       alt="HireMe - Get Hired | Hire Faster"
-      className={`h-10 w-auto object-contain select-none ${className}`}
+      className={`h-14 w-auto object-contain select-none ${className}`}
       draggable={false}
     />
   );

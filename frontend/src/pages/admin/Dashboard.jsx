@@ -1,17 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   Tooltip, LineChart, Line, CartesianGrid,
 } from "recharts";
 import {
-  Users, Briefcase, Building2, Search, TrendingUp, BarChart3, Activity,
-  MoreVertical,
+  Users, Briefcase, Building2, Search, TrendingUp, BarChart3, Activity, Loader2,
 } from "lucide-react";
 import AdminLayout from "./AdminLayout";
-import {
-  dashboardStats, jobsCreatedMonthly, jobsByIndustry, candidatesMonthly,
-  recentCompanies, recentJobs,
-} from "../../mock/mock";
+import api from "../../lib/api";
 
 const iconMap = { Users, Briefcase, Building2, Search };
 const donutColors = ["#2c0eee", "#f61d25", "#0ea5e9", "#16a34a", "#9333ea", "#ea580c", "#0d9488"];
@@ -33,11 +29,31 @@ function StatusPill({ status }) {
 }
 
 export default function Dashboard() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    api.get("/dashboard").then((res) => setData(res.data)).catch(() => {});
+  }, []);
+
+  if (!data) {
+    return (
+      <AdminLayout title="Dashboard">
+        <div className="flex items-center justify-center py-32 text-gray-400">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading dashboard…
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const {
+    stats, jobsCreatedMonthly, jobsByIndustry, candidatesMonthly, recentCompanies, recentJobs,
+  } = data;
+
   return (
     <AdminLayout title="Dashboard">
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        {dashboardStats.map((s) => {
+        {stats.map((s) => {
           const Icon = iconMap[s.icon];
           return (
             <Card key={s.label} className="p-6 flex items-start justify-between">

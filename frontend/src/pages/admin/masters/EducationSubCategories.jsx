@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Plus, Search, Eye, Pencil, Trash2, BookCopy } from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Plus, Search, Eye, Pencil, Trash2, BookCopy, Loader2 } from "lucide-react";
 import AdminLayout from "../AdminLayout";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -17,19 +17,32 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "../../../components/ui/alert-dialog";
 import { useToast } from "../../../hooks/use-toast";
-import { educationSubCategoriesSeed, categoryOptions } from "../../../mock/mock";
-
-const today = "24 Sep 2026";
+import api from "../../../lib/api";
 
 export default function EducationSubCategories() {
   const { toast } = useToast();
-  const [rows, setRows] = useState(educationSubCategoriesSeed);
+  const [rows, setRows] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [form, setForm] = useState({ name: "", category: categoryOptions[0], status: true });
+  const [form, setForm] = useState({ name: "", category: "", status: true });
+
+  const load = () => {
+    setLoading(true);
+    Promise.all([
+      api.get("/education-sub-categories"),
+      api.get("/education-categories"),
+    ]).then(([sub, cat]) => {
+      setRows(sub.data);
+      setCategoryOptions(cat.data.map((c) => c.name));
+    }).finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); }, []);
 
   const counts = useMemo(() => ({
     all: rows.length,
@@ -43,28 +56,52 @@ export default function EducationSubCategories() {
     return matchQ && matchT;
   });
 
-  const openAdd = () => { setEditing(null); setForm({ name: "", category: categoryOptions[0], status: true }); setDialogOpen(true); };
+  const openAdd = () => { setEditing(null); setForm({ name: "", category: categoryOptions[0] || "", status: true }); setDialogOpen(true); };
   const openEdit = (r) => { setEditing(r); setForm({ name: r.name, category: r.category, status: r.status }); setDialogOpen(true); };
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim()) { toast({ title: "Sub category name required", variant: "destructive" }); return; }
-    if (editing) {
-      setRows(rows.map((r) => r.id === editing.id ? { ...r, ...form, updatedBy: "admin", updatedAt: today } : r));
-      toast({ title: "Sub category updated" });
-    } else {
-      setRows([{ id: Date.now(), ...form, updatedBy: "admin", updatedAt: today }, ...rows]);
-      toast({ title: "Sub category created" });
+    if (!form.category) { toast({ title: "Parent category required", variant: "destructive" }); return; }
+    setSaving(true);
+    try {
+      if (editing) {
+        const { data } = await api.put(`/education-sub-categories/${editing.id}`, form);
+        setRows(rows.map((r) => (r.id === editing.id ? data : r)));
+        toast({ title: "Sub category updated" });
+      } else {
+        const { data } = await api.post("/education-sub-categories", form);
+        setRows([data, ...rows]);
+        toast({ title: "Sub category created" });
+      }
+      setDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Something went wrong", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    setDialogOpen(false);
   };
 
-  const toggleStatus = (id) =>
-    setRows(rows.map((r) => r.id === id ? { ...r, status: !r.status, updatedBy: "admin", updatedAt: today } : r));
+  const toggleStatus = async (r) => {
+    setRows(rows.map((x) => (x.id === r.id ? { ...x, status: !x.status } : x)));
+    try {
+      const { data } = await api.put(`/education-sub-categories/${r.id}`, { status: !r.status });
+      setRows((prev) => prev.map((x) => (x.id === r.id ? data : x)));
+    } catch (e) {
+      setRows(rows);
+      toast({ title: "Update failed", variant: "destructive" });
+    }
+  };
 
-  const confirmDelete = () => {
-    setRows(rows.filter((r) => r.id !== deleteId));
-    setDeleteId(null);
-    toast({ title: "Sub category deleted" });
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/education-sub-categories/${deleteId}`);
+      setRows(rows.filter((r) => r.id !== deleteId));
+      toast({ title: "Sub category deleted" });
+    } catch (e) {
+      toast({ title: "Delete failed", variant: "destructive" });
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -115,7 +152,7 @@ export default function EducationSubCategories() {
                   <td className="py-4 pr-4 font-medium text-gray-800">{r.name}</td>
                   <td className="py-4 pr-4 text-gray-600">{r.category}</td>
                   <td className="py-4 pr-4">
-                    <Switch checked={r.status} onCheckedChange={() => toggleStatus(r.id)} className="data-[state=checked]:bg-[#2c0eee]" />
+                    <Switch checked={r.status} onCheckedChange={() => toggleStatus(r)} className="data-[state=checked]:bg-[#2c0eee]" />
                   </td>
                   <td className="py-4 pr-4 text-gray-600">{r.updatedAt}</td>
                   <td className="py-4 pr-4">
@@ -128,7 +165,7 @@ export default function EducationSubCategories() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="py-10 text-center text-gray-400">No sub categories found</td></tr>
+                <tr><td colSpan={6} className="py-10 text-center text-gray-400">{loading ? "Loading…" : "No sub categories found"}</td></tr>
               )}
             </tbody>
           </table>
@@ -162,7 +199,9 @@ export default function EducationSubCategories() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save} className="bg-[#2c0eee] hover:bg-[#2408c9] text-white font-semibold">{editing ? "Save Changes" : "Create Sub Category"}</Button>
+            <Button onClick={save} disabled={saving} className="bg-[#2c0eee] hover:bg-[#2408c9] text-white font-semibold">
+              {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</> : (editing ? "Save Changes" : "Create Sub Category")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

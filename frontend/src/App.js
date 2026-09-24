@@ -9,7 +9,7 @@ import EducationCategories from "./pages/admin/masters/EducationCategories";
 import EducationSubCategories from "./pages/admin/masters/EducationSubCategories";
 
 function RequireAuth({ children }) {
-  const isAuthed = !!localStorage.getItem("hireme_admin");
+  const isAuthed = !!localStorage.getItem("hireme_token");
   return isAuthed ? children : <Navigate to="/admin/login" replace />;
 }
 

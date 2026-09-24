@@ -37,6 +37,7 @@ export default function AdminLayout({ title, children }) {
 
   const logout = () => {
     localStorage.removeItem("hireme_admin");
+    localStorage.removeItem("hireme_token");
     navigate("/admin/login");
   };
 
