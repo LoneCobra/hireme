@@ -77,12 +77,16 @@ export default function Dashboard() {
             <div><p className="font-head font-semibold text-gray-800">Jobs Created</p><p className="text-xs text-gray-500">Monthly job creation</p></div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
+            {jobsCreatedMonthly.some((e) => e.value > 0) ? (
             <PieChart>
               <Pie data={jobsCreatedMonthly} dataKey="value" nameKey="month" innerRadius={55} outerRadius={85} paddingAngle={2}>
                 {jobsCreatedMonthly.map((e, i) => <Cell key={i} fill={donutColors[i % donutColors.length]} />)}
               </Pie>
               <Tooltip />
             </PieChart>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-gray-400">No data yet</div>
+            )}
           </ResponsiveContainer>
           <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center mt-2">
             {jobsCreatedMonthly.map((e, i) => (
@@ -99,6 +103,7 @@ export default function Dashboard() {
             <div><p className="font-head font-semibold text-gray-800">Jobs by Industry</p><p className="text-xs text-gray-500">Total jobs per industry</p></div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
+            {jobsByIndustry.length > 0 ? (
             <BarChart data={jobsByIndustry} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
@@ -108,6 +113,9 @@ export default function Dashboard() {
                 {jobsByIndustry.map((e, i) => <Cell key={i} fill={e.fill} />)}
               </Bar>
             </BarChart>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-gray-400">No data yet</div>
+            )}
           </ResponsiveContainer>
         </Card>
 
@@ -151,6 +159,9 @@ export default function Dashboard() {
                     <td className="py-3"><StatusPill status={c.status} /></td>
                   </tr>
                 ))}
+                {recentCompanies.length === 0 && (
+                  <tr><td colSpan={5} className="py-8 text-center text-gray-400">No companies yet</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -177,6 +188,9 @@ export default function Dashboard() {
                     <td className="py-3"><StatusPill status={j.status} /></td>
                   </tr>
                 ))}
+                {recentJobs.length === 0 && (
+                  <tr><td colSpan={5} className="py-8 text-center text-gray-400">No jobs yet</td></tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import json
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -200,40 +201,22 @@ async def delete_subcategory(sid: str, user=Depends(get_current_user)):
 @api_router.get('/dashboard')
 async def dashboard(user=Depends(get_current_user)):
     cat_count = await db.education_categories.count_documents({})
+    company_count = await db.companies.count_documents({}) if 'companies' in await db.list_collection_names() else 0
+    job_count = await db.jobs.count_documents({}) if 'jobs' in await db.list_collection_names() else 0
+    candidate_count = await db.candidates.count_documents({}) if 'candidates' in await db.list_collection_names() else 0
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
     return {
         'stats': [
-            {'label': 'ACTIVE CANDIDATES', 'value': 36, 'icon': 'Users', 'color': '#2c0eee'},
-            {'label': 'ACTIVE JOBS', 'value': 10, 'icon': 'Briefcase', 'color': '#f61d25'},
-            {'label': 'ACTIVE COMPANIES', 'value': 6, 'icon': 'Building2', 'color': '#2c0eee'},
-            {'label': 'TOTAL SEARCH COUNT', 'value': 19, 'icon': 'Search', 'color': '#f61d25'},
+            {'label': 'ACTIVE CANDIDATES', 'value': candidate_count, 'icon': 'Users', 'color': '#2c0eee'},
+            {'label': 'ACTIVE JOBS', 'value': job_count, 'icon': 'Briefcase', 'color': '#f61d25'},
+            {'label': 'ACTIVE COMPANIES', 'value': company_count, 'icon': 'Building2', 'color': '#2c0eee'},
+            {'label': 'TOTAL SEARCH COUNT', 'value': 0, 'icon': 'Search', 'color': '#f61d25'},
         ],
-        'jobsCreatedMonthly': [
-            {'month': 'Jan', 'value': 4}, {'month': 'Feb', 'value': 2}, {'month': 'Mar', 'value': 6},
-            {'month': 'Apr', 'value': 3}, {'month': 'May', 'value': 5}, {'month': 'Jun', 'value': 8},
-            {'month': 'Jul', 'value': 3},
-        ],
-        'jobsByIndustry': [
-            {'name': 'Software', 'value': 31, 'fill': '#2c0eee'},
-            {'name': 'Information Tech', 'value': 15, 'fill': '#f61d25'},
-            {'name': 'Banking', 'value': 12, 'fill': '#2c0eee'},
-            {'name': 'Sales & Mktg', 'value': 9, 'fill': '#f61d25'},
-        ],
-        'candidatesMonthly': [
-            {'month': 'Jan', 'value': 12}, {'month': 'Feb', 'value': 18}, {'month': 'Mar', 'value': 15},
-            {'month': 'Apr', 'value': 24}, {'month': 'May', 'value': 30}, {'month': 'Jun', 'value': 27},
-        ],
-        'recentCompanies': [
-            {'id': 1, 'company': 'Shekhawat Tech', 'industry': 'Software', 'date': '24 Sep 2026', 'status': 'Active'},
-            {'id': 2, 'company': 'CC Solutions', 'industry': 'Software', 'date': '24 Sep 2026', 'status': 'Active'},
-            {'id': 3, 'company': 'Vertex Digital', 'industry': 'IT', 'date': '22 Sep 2026', 'status': 'Pending'},
-            {'id': 4, 'company': 'Quantum Labs', 'industry': 'AI', 'date': '21 Sep 2026', 'status': 'Active'},
-        ],
-        'recentJobs': [
-            {'id': 1, 'title': 'Demo Engineer', 'company': 'HealthPlus', 'date': '24 Sep 2026', 'status': 'Published'},
-            {'id': 2, 'title': 'Lecturer', 'company': 'HealthPlus', 'date': '24 Sep 2026', 'status': 'Published'},
-            {'id': 3, 'title': 'React Developer', 'company': 'Maxgen', 'date': '23 Sep 2026', 'status': 'Draft'},
-            {'id': 4, 'title': 'Data Analyst', 'company': 'Vertex', 'date': '22 Sep 2026', 'status': 'Published'},
-        ],
+        'jobsCreatedMonthly': [{'month': m, 'value': 0} for m in months],
+        'jobsByIndustry': [],
+        'candidatesMonthly': [{'month': m, 'value': 0} for m in months[:6]],
+        'recentCompanies': [],
+        'recentJobs': [],
         'totalCategories': cat_count,
     }
 
@@ -244,7 +227,7 @@ def register_master(path: str, collection: str, allowed: list):
 
     @api_router.get(f'/{path}', name=f'list_{coll}')
     async def _list(user=Depends(get_current_user)):
-        rows = await db[coll].find().sort('created_at', -1).to_list(2000)
+        rows = await db[coll].find().sort('created_at', -1).to_list(20000)
         return [clean(r) for r in rows]
 
     @api_router.post(f'/{path}', name=f'create_{coll}')
@@ -317,30 +300,57 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------- Seeding ----------------
-CATEGORY_SEED = [
-    ('Graduate Diploma', True, True, 'yash soni', '23 Sep 2026'),
-    ('Associate Science (AS)', False, True, '-', '09 Sep 2026'),
-    ('Chartered Global Management Accountant (CGMA)', False, True, '-', '09 Sep 2026'),
-    ('Associate Chartered Management Accountant (ACMA)', False, True, '-', '09 Sep 2026'),
-    ('Bachelor Of Journalism & Mass Communication (BJMC)', False, True, '-', '09 Sep 2026'),
-    ('Bachelor Of Elementary Education (B.El.Ed)', False, True, '-', '09 Sep 2026'),
-    ('Bachelor Of Fine Arts (B.F.A)', False, True, '-', '09 Sep 2026'),
-    ('Bachelor Of Hotel Management And Catering Technology (BHMCT)', False, True, '-', '09 Sep 2026'),
-    ('Bachelor Of Unani Medicine And Surgery (B.U.M.S)', False, True, '-', '09 Sep 2026'),
-    ('Bachelor Of Physical Education (B.P.Ed)', False, True, '-', '09 Sep 2026'),
-    ('Master Of Business Administration (MBA)', True, True, 'priya k', '08 Sep 2026'),
-    ('Master Of Computer Applications (MCA)', False, False, '-', '07 Sep 2026'),
-    ('Bachelor Of Engineering', False, True, '-', '06 Sep 2026'),
-]
+# Comprehensive list of Indian States/UTs with major cities.
+INDIA_STATES = {
+    'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Rajahmundry', 'Kadapa', 'Tirupati', 'Anantapur', 'Kakinada', 'Eluru', 'Ongole', 'Nandyal', 'Machilipatnam', 'Adoni', 'Tenali', 'Chittoor', 'Hindupur', 'Proddatur', 'Bhimavaram'],
+    'Arunachal Pradesh': ['Itanagar', 'Naharlagun', 'Pasighat', 'Tawang', 'Ziro', 'Bomdila'],
+    'Assam': ['Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat', 'Nagaon', 'Tinsukia', 'Tezpur', 'Bongaigaon', 'Dhubri', 'Diphu', 'North Lakhimpur'],
+    'Bihar': ['Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Purnia', 'Darbhanga', 'Bihar Sharif', 'Arrah', 'Begusarai', 'Katihar', 'Munger', 'Chhapra', 'Danapur', 'Saharsa', 'Hajipur', 'Sasaram', 'Dehri', 'Bettiah', 'Motihari', 'Kishanganj'],
+    'Chhattisgarh': ['Raipur', 'Bhilai', 'Bilaspur', 'Korba', 'Durg', 'Rajnandgaon', 'Jagdalpur', 'Raigarh', 'Ambikapur', 'Dhamtari', 'Mahasamund'],
+    'Goa': ['Panaji', 'Margao', 'Vasco da Gama', 'Mapusa', 'Ponda', 'Bicholim'],
+    'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar', 'Junagadh', 'Gandhinagar', 'Anand', 'Nadiad', 'Morbi', 'Surendranagar', 'Bharuch', 'Navsari', 'Vapi', 'Porbandar', 'Gandhidham', 'Mehsana', 'Bhuj', 'Valsad'],
+    'Haryana': ['Faridabad', 'Gurugram', 'Panipat', 'Ambala', 'Yamunanagar', 'Rohtak', 'Hisar', 'Karnal', 'Sonipat', 'Panchkula', 'Bhiwani', 'Sirsa', 'Bahadurgarh', 'Jind', 'Kaithal', 'Rewari', 'Palwal'],
+    'Himachal Pradesh': ['Shimla', 'Solan', 'Dharamshala', 'Mandi', 'Kullu', 'Manali', 'Bilaspur', 'Hamirpur', 'Una', 'Nahan', 'Palampur'],
+    'Jharkhand': ['Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro', 'Deoghar', 'Hazaribagh', 'Giridih', 'Ramgarh', 'Phusro', 'Medininagar', 'Chirkunda'],
+    'Karnataka': ['Bengaluru (Bangalore)', 'Mysuru', 'Hubli-Dharwad', 'Mangaluru', 'Belagavi', 'Kalaburagi', 'Davanagere', 'Ballari', 'Vijayapura', 'Shivamogga', 'Tumakuru', 'Raichur', 'Bidar', 'Hospet', 'Hassan', 'Udupi', 'Chitradurga', 'Kolar', 'Mandya', 'Chikmagalur'],
+    'Kerala': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Kollam', 'Thrissur', 'Alappuzha', 'Palakkad', 'Kannur', 'Kottayam', 'Malappuram', 'Kasaragod', 'Pathanamthitta', 'Idukki', 'Wayanad'],
+    'Madhya Pradesh': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa', 'Katni', 'Singrauli', 'Burhanpur', 'Khandwa', 'Morena', 'Bhind', 'Chhindwara', 'Vidisha', 'Shivpuri'],
+    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Thane', 'Aurangabad', 'Solapur', 'Amravati', 'Kolhapur', 'Sangli', 'Malegaon', 'Akola', 'Latur', 'Dhule', 'Ahmednagar', 'Chandrapur', 'Parbhani', 'Jalgaon', 'Nanded', 'Navi Mumbai'],
+    'Manipur': ['Imphal', 'Thoubal', 'Bishnupur', 'Churachandpur', 'Kakching', 'Ukhrul'],
+    'Meghalaya': ['Shillong', 'Tura', 'Jowai', 'Nongstoin', 'Baghmara', 'Williamnagar'],
+    'Mizoram': ['Aizawl', 'Lunglei', 'Champhai', 'Serchhip', 'Kolasib', 'Saiha'],
+    'Nagaland': ['Kohima', 'Dimapur', 'Mokokchung', 'Tuensang', 'Wokha', 'Zunheboto'],
+    'Odisha': ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Berhampur', 'Sambalpur', 'Puri', 'Balasore', 'Bhadrak', 'Baripada', 'Jharsuguda', 'Jeypore'],
+    'Punjab': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali', 'Hoshiarpur', 'Batala', 'Pathankot', 'Moga', 'Firozpur', 'Kapurthala', 'Phagwara', 'Barnala'],
+    'Rajasthan': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Bikaner', 'Ajmer', 'Bhilwara', 'Alwar', 'Sikar', 'Pali', 'Sri Ganganagar', 'Kishangarh', 'Beawar', 'Hanumangarh', 'Dhaulpur', 'Bharatpur', 'Tonk', 'Nagaur'],
+    'Sikkim': ['Gangtok', 'Namchi', 'Gyalshing', 'Mangan', 'Rangpo', 'Singtam'],
+    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Tiruppur', 'Erode', 'Vellore', 'Thoothukudi', 'Dindigul', 'Thanjavur', 'Nagercoil', 'Karur', 'Hosur', 'Cuddalore', 'Kancheepuram', 'Kumbakonam', 'Rajapalayam'],
+    'Telangana': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Ramagundam', 'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Suryapet', 'Miryalaguda', 'Siddipet'],
+    'Tripura': ['Agartala', 'Udaipur', 'Dharmanagar', 'Kailashahar', 'Belonia', 'Ambassa'],
+    'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Ghaziabad', 'Agra', 'Varanasi', 'Meerut', 'Prayagraj (Allahabad)', 'Bareilly', 'Aligarh', 'Moradabad', 'Saharanpur', 'Gorakhpur', 'Noida', 'Firozabad', 'Jhansi', 'Muzaffarnagar', 'Mathura', 'Rampur', 'Shahjahanpur', 'Ayodhya'],
+    'Uttarakhand': ['Dehradun', 'Haridwar', 'Roorkee', 'Haldwani', 'Rudrapur', 'Kashipur', 'Rishikesh', 'Nainital', 'Mussoorie', 'Almora'],
+    'West Bengal': ['Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Bardhaman', 'Malda', 'Baharampur', 'Habra', 'Kharagpur', 'Haldia', 'Krishnanagar', 'Darjeeling', 'Jalpaiguri'],
+    'Andaman and Nicobar Islands': ['Port Blair', 'Diglipur', 'Mayabunder', 'Rangat'],
+    'Chandigarh': ['Chandigarh'],
+    'Dadra and Nagar Haveli and Daman and Diu': ['Daman', 'Diu', 'Silvassa'],
+    'Delhi': ['Delhi', 'New Delhi', 'Dwarka', 'Rohini', 'Saket', 'Pitampura'],
+    'Jammu and Kashmir': ['Srinagar', 'Jammu', 'Anantnag', 'Baramulla', 'Udhampur', 'Sopore', 'Kathua'],
+    'Ladakh': ['Leh', 'Kargil'],
+    'Lakshadweep': ['Kavaratti', 'Agatti', 'Minicoy'],
+    'Puducherry': ['Puducherry', 'Karaikal', 'Yanam', 'Mahe'],
+}
 
-SUBCATEGORY_SEED = [
-    ('Computer Science', 'Bachelor Of Engineering', True, 'yash soni', '23 Sep 2026'),
-    ('Mechanical Engineering', 'Bachelor Of Engineering', True, '-', '10 Sep 2026'),
-    ('Finance', 'Master Of Business Administration (MBA)', True, 'priya k', '09 Sep 2026'),
-    ('Marketing', 'Master Of Business Administration (MBA)', True, '-', '09 Sep 2026'),
-    ('Data Science', 'Master Of Computer Applications (MCA)', True, '-', '08 Sep 2026'),
-    ('Painting', 'Bachelor Of Fine Arts (B.F.A)', False, '-', '07 Sep 2026'),
-    ('Journalism', 'Bachelor Of Journalism & Mass Communication (BJMC)', True, '-', '06 Sep 2026'),
+# Metros pre-marked trending, with monument icons (order = homepage order).
+_CDN = 'https://apidata.hiremejobs.in/uploads'
+TRENDING_METROS = [
+    ('Delhi', 'Delhi', f'{_CDN}/1790190449993-Delhi.png'),
+    ('Kolkata', 'West Bengal', f'{_CDN}/1790190469638-Kolkata.png'),
+    ('Hyderabad', 'Telangana', f'{_CDN}/1790190007500-Hyderabad-(1).png'),
+    ('Chennai', 'Tamil Nadu', f'{_CDN}/1790190437075-Chennai.png'),
+    ('Pune', 'Maharashtra', f'{_CDN}/1790190498685-Pune.png'),
+    ('Mumbai', 'Maharashtra', f'{_CDN}/1790190483234-Mumbai.png'),
+    ('Bengaluru (Bangalore)', 'Karnataka', f'{_CDN}/1790190422646-Banglore.png'),
+    ('Ahmedabad', 'Gujarat', f'{_CDN}/1790190402072-Ahmedbad.png'),
 ]
 
 
@@ -357,119 +367,79 @@ async def seed():
         })
         logger.info('Seeded superadmin')
 
-    if await db.education_categories.count_documents({}) == 0:
-        docs = []
-        for i, (name, trending, st, by, at) in enumerate(CATEGORY_SEED):
-            docs.append({
-                'id': str(uuid.uuid4()), 'name': name, 'trending': trending, 'status': st,
-                'updatedBy': by, 'updatedAt': at,
-                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
-            })
-        await db.education_categories.insert_many(docs)
-        logger.info('Seeded education categories')
+    # Education/Industry/Skill masters intentionally start EMPTY (admin adds their own).
 
-    if await db.education_sub_categories.count_documents({}) == 0:
-        docs = []
-        for i, (name, cat, st, by, at) in enumerate(SUBCATEGORY_SEED):
-            docs.append({
-                'id': str(uuid.uuid4()), 'name': name, 'category': cat, 'status': st,
-                'updatedBy': by, 'updatedAt': at,
-                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
-            })
-        await db.education_sub_categories.insert_many(docs)
-        logger.info('Seeded education sub categories')
+    # Load comprehensive Indian cities dataset (name, state, district)
+    def canon_state(s: str) -> str:
+        s = s.replace('*', '').replace(' & ', ' and ').strip()
+        rename = {
+            'Orissa': 'Odisha',
+            'Uttaranchal': 'Uttarakhand',
+            'Pondicherry': 'Puducherry',
+            'Dadra and Nagar Haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'Daman and Diu': 'Dadra and Nagar Haveli and Daman and Diu',
+        }
+        return rename.get(s, s)
 
-    # States
+    dataset = []
+    try:
+        with open(ROOT_DIR / 'data' / 'indian_cities.json', 'r', encoding='utf-8') as fh:
+            raw = json.load(fh)
+        for row in raw:
+            city = str(row.get('City', '')).strip()
+            state = canon_state(str(row.get('State', '')).strip())
+            if city and state:
+                dataset.append((city, state))
+    except Exception as e:
+        logger.warning(f'Could not load cities dataset: {e}')
+
+    dataset_states = {st for _, st in dataset}
+
+    # States (from dataset + curated + metro states, canonical & de-duplicated)
     if await db.states.count_documents({}) == 0:
-        states = [
-            'Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'Telangana', 'West Bengal',
-            'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Kerala', 'Punjab', 'Haryana',
-            'Madhya Pradesh', 'Bihar', 'Andhra Pradesh', 'Goa',
-        ]
+        all_states = dataset_states | set(INDIA_STATES.keys()) | {st for _, st, _ in TRENDING_METROS}
         docs = []
-        for i, name in enumerate(states):
+        for i, name in enumerate(sorted(all_states)):
             docs.append({
                 'id': str(uuid.uuid4()), 'name': name, 'status': True,
-                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
+                'updatedBy': '-', 'updatedAt': now_display(),
                 'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
             })
         await db.states.insert_many(docs)
-        logger.info('Seeded states')
+        logger.info(f'Seeded {len(docs)} states')
 
-    # Cities (8 metros - trending, with monument images)
+    # Cities (metros first with images/trending, then full dataset, de-duplicated)
     if await db.cities.count_documents({}) == 0:
-        cdn = 'https://apidata.hiremejobs.in/uploads'
-        cities = [
-            ('Delhi', 'Delhi', f'{cdn}/1790190449993-Delhi.png'),
-            ('Kolkata', 'West Bengal', f'{cdn}/1790190469638-Kolkata.png'),
-            ('Hyderabad', 'Telangana', f'{cdn}/1790190007500-Hyderabad-(1).png'),
-            ('Chennai', 'Tamil Nadu', f'{cdn}/1790190437075-Chennai.png'),
-            ('Pune', 'Maharashtra', f'{cdn}/1790190498685-Pune.png'),
-            ('Mumbai', 'Maharashtra', f'{cdn}/1790190483234-Mumbai.png'),
-            ('Bengaluru (Bangalore)', 'Karnataka', f'{cdn}/1790190422646-Banglore.png'),
-            ('Ahmedabad', 'Gujarat', f'{cdn}/1790190402072-Ahmedbad.png'),
-        ]
+        base = datetime.utcnow()
         docs = []
-        for i, (name, state, img) in enumerate(cities):
+        seen = set()
+        for i, (name, state, img) in enumerate(TRENDING_METROS):
+            seen.add(name.strip().lower())
             docs.append({
                 'id': str(uuid.uuid4()), 'name': name, 'state': state, 'image': img,
                 'trending': True, 'status': True,
-                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
-                'created_at': (datetime.utcnow() + timedelta(seconds=i)).isoformat(),
+                'updatedBy': '-', 'updatedAt': now_display(),
+                'created_at': (base + timedelta(seconds=i)).isoformat(),
+            })
+        # aliases so dataset duplicates of metros are skipped
+        seen.update({'bengaluru', 'bangalore', 'new delhi'})
+
+        source = dataset if dataset else [(c, st) for st, cs in INDIA_STATES.items() for c in cs]
+        counter = 0
+        for city, state in source:
+            key = city.strip().lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            counter += 1
+            docs.append({
+                'id': str(uuid.uuid4()), 'name': city, 'state': state, 'image': '',
+                'trending': False, 'status': True,
+                'updatedBy': '-', 'updatedAt': now_display(),
+                'created_at': (base + timedelta(seconds=1000 + counter)).isoformat(),
             })
         await db.cities.insert_many(docs)
-        logger.info('Seeded cities')
-
-    # Industries
-    if await db.industries.count_documents({}) == 0:
-        inds = [
-            'Software', 'Information Technology', 'Banking / Financial Services',
-            'Sales and Marketing', 'Artificial Intelligence', 'Consumer Electronics',
-            'Healthcare', 'Education', 'Manufacturing', 'Retail',
-        ]
-        docs = []
-        for i, name in enumerate(inds):
-            docs.append({
-                'id': str(uuid.uuid4()), 'name': name, 'status': True,
-                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
-                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
-            })
-        await db.industries.insert_many(docs)
-        logger.info('Seeded industries')
-
-    # Sub Industries
-    if await db.sub_industries.count_documents({}) == 0:
-        subs = [
-            ('Web Development', 'Software'), ('Mobile Development', 'Software'),
-            ('Cloud Computing', 'Information Technology'), ('Cybersecurity', 'Information Technology'),
-            ('Investment Banking', 'Banking / Financial Services'), ('Insurance', 'Banking / Financial Services'),
-            ('Digital Marketing', 'Sales and Marketing'), ('Machine Learning', 'Artificial Intelligence'),
-        ]
-        docs = []
-        for i, (name, ind) in enumerate(subs):
-            docs.append({
-                'id': str(uuid.uuid4()), 'name': name, 'industry': ind, 'status': True,
-                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
-                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
-            })
-        await db.sub_industries.insert_many(docs)
-        logger.info('Seeded sub industries')
-
-    # Skills
-    if await db.skills.count_documents({}) == 0:
-        skills = [
-            'React.Js', 'Node.Js', 'Python', 'JavaScript (ES6+)', 'HTML5/CSS3', 'Git',
-            'AWS', 'Docker', 'Kubernetes', 'SQL', 'Java', 'Redux', 'Machine Learning', 'DevOps',
-        ]
-        docs = []
-        for i, name in enumerate(skills):
-            docs.append({
-                'id': str(uuid.uuid4()), 'name': name, 'status': True,
-                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
-                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
-            })
-        await db.skills.insert_many(docs)
-        logger.info('Seeded skills')
+        logger.info(f'Seeded {len(docs)} cities')
 
 
 @app.on_event('shutdown')

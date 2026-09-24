@@ -49,6 +49,8 @@ export default function MasterPage({
     return f;
   };
   const [form, setForm] = useState(emptyForm());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   const load = () => {
     setLoading(true);
@@ -73,6 +75,11 @@ export default function MasterPage({
     const matchT = tab === "all" || (tab === "active" && r.status) || (tab === "inactive" && !r.status);
     return matchQ && matchT;
   });
+
+  useEffect(() => { setPage(1); }, [query, tab]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageSafe = Math.min(page, totalPages);
+  const paged = filtered.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
 
   const openAdd = () => {
     const f = emptyForm();
@@ -179,9 +186,9 @@ export default function MasterPage({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r, idx) => (
+              {paged.map((r, idx) => (
                 <tr key={r.id} className="border-b border-gray-50 hover:bg-[#f6f7fb]/60">
-                  <td className="py-4 pr-4 text-gray-400">{idx + 1}</td>
+                  <td className="py-4 pr-4 text-gray-400">{(pageSafe - 1) * PAGE_SIZE + idx + 1}</td>
                   {hasImage && (
                     <td className="py-3 pr-4">
                       <div className="h-11 w-11 rounded-full flex items-center justify-center overflow-hidden" style={{ background: "radial-gradient(circle at 50% 30%, #23237a, #0c0c2b)" }}>
@@ -214,6 +221,19 @@ export default function MasterPage({
             </tbody>
           </table>
         </div>
+
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+            <p className="text-sm text-gray-500">
+              Showing {(pageSafe - 1) * PAGE_SIZE + 1}–{Math.min(pageSafe * PAGE_SIZE, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={pageSafe <= 1} onClick={() => setPage(pageSafe - 1)}>Previous</Button>
+              <span className="text-sm text-gray-600 px-2">Page {pageSafe} of {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={pageSafe >= totalPages} onClick={() => setPage(pageSafe + 1)}>Next</Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit dialog */}

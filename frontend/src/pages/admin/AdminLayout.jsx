@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Building2, MessageSquare, Briefcase, Users, Package,
-  CreditCard, UserCog, Database, Settings, ChevronDown, GraduationCap,
-  BookCopy, Gift, Tag, MapPin, Building, Menu, Search, Bell, LogOut,
+  LayoutDashboard, Database, ChevronDown, GraduationCap,
+  BookCopy, MapPin, Building, Menu, Search, Bell, LogOut,
   Factory, Layers, Sparkles,
 } from "lucide-react";
 import Logo from "../../components/Logo";
@@ -14,21 +13,12 @@ const masterItems = [
   { label: "Industries", to: "/admin/masters/industries", icon: Factory },
   { label: "Sub Industries", to: "/admin/masters/sub-industries", icon: Layers },
   { label: "Skills", to: "/admin/masters/skills", icon: Sparkles },
-  { label: "Perk & Benefit Categories", to: "#", icon: Gift },
-  { label: "Perk & Benefits", to: "#", icon: Tag },
   { label: "States", to: "/admin/masters/states", icon: MapPin },
   { label: "Cities", to: "/admin/masters/cities", icon: Building },
 ];
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Company", to: "#", icon: Building2 },
-  { label: "Inquiry", to: "#", icon: MessageSquare },
-  { label: "Jobs", to: "#", icon: Briefcase },
-  { label: "Candidates", to: "#", icon: Users },
-  { label: "Packages", to: "#", icon: Package },
-  { label: "Payments", to: "#", icon: CreditCard },
-  { label: "Admin User", to: "#", icon: UserCog },
 ];
 
 export default function AdminLayout({ title, children }) {
@@ -78,10 +68,6 @@ export default function AdminLayout({ title, children }) {
               ))}
             </div>
           )}
-
-          <div className={`${linkBase} hover:bg-white/5 hover:text-white cursor-pointer`}>
-            <Settings className="h-[18px] w-[18px]" /> Settings
-          </div>
         </nav>
 
         <div className="border-t border-white/10 p-4 flex items-center gap-3">
