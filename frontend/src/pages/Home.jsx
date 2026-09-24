@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Search, MapPin, Briefcase, ChevronDown, ArrowRight } from "lucide-react";
 import Header from "../components/home/Header";
 import Footer from "../components/home/Footer";
@@ -26,6 +27,14 @@ export default function Home() {
   const [experience, setExperience] = useState("");
   const [activeIndustry, setActiveIndustry] = useState("Software");
   const [activeVacancy, setActiveVacancy] = useState("Skills");
+  const [cities, setCities] = useState(popularCities);
+
+  useEffect(() => {
+    const url = `${process.env.REACT_APP_BACKEND_URL}/api/public/trending-cities`;
+    axios.get(url).then((res) => {
+      if (Array.isArray(res.data) && res.data.length > 0) setCities(res.data);
+    }).catch(() => {});
+  }, []);
 
   const handleSearch = () =>
     toast({ title: "Searching jobs…", description: `Skills: "${keyword || "Any"}" • Location: "${location || "Any"}" • Exp: "${experience || "Any"}"` });
@@ -95,7 +104,7 @@ export default function Home() {
         <Heading black="Popular" grad="Cities" />
         <p className="text-center text-gray-500 mt-3 mb-12">Discover job opportunities in India's top metropolitan cities</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-6">
-          {popularCities.map((c) => (
+          {cities.map((c) => (
             <button key={c.name} className="group flex flex-col items-center text-center">
               <div className="h-[92px] w-[92px] rounded-full flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform"
                 style={{ background: "radial-gradient(circle at 50% 30%, #23237a, #0c0c2b)" }}>

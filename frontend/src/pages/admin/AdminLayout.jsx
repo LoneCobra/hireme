@@ -4,16 +4,20 @@ import {
   LayoutDashboard, Building2, MessageSquare, Briefcase, Users, Package,
   CreditCard, UserCog, Database, Settings, ChevronDown, GraduationCap,
   BookCopy, Gift, Tag, MapPin, Building, Menu, Search, Bell, LogOut,
+  Factory, Layers, Sparkles,
 } from "lucide-react";
 import Logo from "../../components/Logo";
 
 const masterItems = [
   { label: "Education Categories", to: "/admin/masters/education-categories", icon: GraduationCap },
   { label: "Education Sub Categories", to: "/admin/masters/education-sub-categories", icon: BookCopy },
+  { label: "Industries", to: "/admin/masters/industries", icon: Factory },
+  { label: "Sub Industries", to: "/admin/masters/sub-industries", icon: Layers },
+  { label: "Skills", to: "/admin/masters/skills", icon: Sparkles },
   { label: "Perk & Benefit Categories", to: "#", icon: Gift },
   { label: "Perk & Benefits", to: "#", icon: Tag },
-  { label: "States", to: "#", icon: MapPin },
-  { label: "Cities", to: "#", icon: Building },
+  { label: "States", to: "/admin/masters/states", icon: MapPin },
+  { label: "Cities", to: "/admin/masters/cities", icon: Building },
 ];
 
 const navItems = [

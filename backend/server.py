@@ -238,6 +238,65 @@ async def dashboard(user=Depends(get_current_user)):
     }
 
 
+# ---------------- Generic Master CRUD ----------------
+def register_master(path: str, collection: str, allowed: list):
+    coll = collection
+
+    @api_router.get(f'/{path}', name=f'list_{coll}')
+    async def _list(user=Depends(get_current_user)):
+        rows = await db[coll].find().sort('created_at', -1).to_list(2000)
+        return [clean(r) for r in rows]
+
+    @api_router.post(f'/{path}', name=f'create_{coll}')
+    async def _create(data: dict, user=Depends(get_current_user)):
+        if not str(data.get('name', '')).strip():
+            raise HTTPException(status_code=400, detail='Name is required')
+        doc = {'id': str(uuid.uuid4())}
+        for f in allowed:
+            if f in data:
+                doc[f] = data[f]
+        doc['name'] = str(doc.get('name', '')).strip()
+        doc.setdefault('status', True)
+        doc['updatedBy'] = user['name']
+        doc['updatedAt'] = now_display()
+        doc['created_at'] = datetime.utcnow().isoformat()
+        await db[coll].insert_one(doc)
+        return clean(doc)
+
+    @api_router.put(f'/{path}/{{item_id}}', name=f'update_{coll}')
+    async def _update(item_id: str, data: dict, user=Depends(get_current_user)):
+        updates = {f: data[f] for f in allowed if f in data}
+        if 'name' in updates:
+            updates['name'] = str(updates['name']).strip()
+        updates['updatedBy'] = user['name']
+        updates['updatedAt'] = now_display()
+        res = await db[coll].find_one_and_update({'id': item_id}, {'$set': updates}, return_document=True)
+        if not res:
+            raise HTTPException(status_code=404, detail='Item not found')
+        return clean(res)
+
+    @api_router.delete(f'/{path}/{{item_id}}', name=f'delete_{coll}')
+    async def _delete(item_id: str, user=Depends(get_current_user)):
+        res = await db[coll].delete_one({'id': item_id})
+        if res.deleted_count == 0:
+            raise HTTPException(status_code=404, detail='Item not found')
+        return {'success': True}
+
+
+register_master('states', 'states', ['name', 'status'])
+register_master('cities', 'cities', ['name', 'state', 'image', 'trending', 'status'])
+register_master('industries', 'industries', ['name', 'status'])
+register_master('sub-industries', 'sub_industries', ['name', 'industry', 'status'])
+register_master('skills', 'skills', ['name', 'status'])
+
+
+# ---------------- Public (homepage) ----------------
+@api_router.get('/public/trending-cities')
+async def trending_cities():
+    rows = await db.cities.find({'trending': True, 'status': True}).sort('created_at', 1).to_list(50)
+    return [{'name': r['name'], 'image': r.get('image')} for r in rows[:8]]
+
+
 @api_router.get('/')
 async def root():
     return {'message': 'HireMe Admin API'}
@@ -319,6 +378,98 @@ async def seed():
             })
         await db.education_sub_categories.insert_many(docs)
         logger.info('Seeded education sub categories')
+
+    # States
+    if await db.states.count_documents({}) == 0:
+        states = [
+            'Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'Telangana', 'West Bengal',
+            'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Kerala', 'Punjab', 'Haryana',
+            'Madhya Pradesh', 'Bihar', 'Andhra Pradesh', 'Goa',
+        ]
+        docs = []
+        for i, name in enumerate(states):
+            docs.append({
+                'id': str(uuid.uuid4()), 'name': name, 'status': True,
+                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
+                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
+            })
+        await db.states.insert_many(docs)
+        logger.info('Seeded states')
+
+    # Cities (8 metros - trending, with monument images)
+    if await db.cities.count_documents({}) == 0:
+        cdn = 'https://apidata.hiremejobs.in/uploads'
+        cities = [
+            ('Delhi', 'Delhi', f'{cdn}/1790190449993-Delhi.png'),
+            ('Kolkata', 'West Bengal', f'{cdn}/1790190469638-Kolkata.png'),
+            ('Hyderabad', 'Telangana', f'{cdn}/1790190007500-Hyderabad-(1).png'),
+            ('Chennai', 'Tamil Nadu', f'{cdn}/1790190437075-Chennai.png'),
+            ('Pune', 'Maharashtra', f'{cdn}/1790190498685-Pune.png'),
+            ('Mumbai', 'Maharashtra', f'{cdn}/1790190483234-Mumbai.png'),
+            ('Bengaluru (Bangalore)', 'Karnataka', f'{cdn}/1790190422646-Banglore.png'),
+            ('Ahmedabad', 'Gujarat', f'{cdn}/1790190402072-Ahmedbad.png'),
+        ]
+        docs = []
+        for i, (name, state, img) in enumerate(cities):
+            docs.append({
+                'id': str(uuid.uuid4()), 'name': name, 'state': state, 'image': img,
+                'trending': True, 'status': True,
+                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
+                'created_at': (datetime.utcnow() + timedelta(seconds=i)).isoformat(),
+            })
+        await db.cities.insert_many(docs)
+        logger.info('Seeded cities')
+
+    # Industries
+    if await db.industries.count_documents({}) == 0:
+        inds = [
+            'Software', 'Information Technology', 'Banking / Financial Services',
+            'Sales and Marketing', 'Artificial Intelligence', 'Consumer Electronics',
+            'Healthcare', 'Education', 'Manufacturing', 'Retail',
+        ]
+        docs = []
+        for i, name in enumerate(inds):
+            docs.append({
+                'id': str(uuid.uuid4()), 'name': name, 'status': True,
+                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
+                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
+            })
+        await db.industries.insert_many(docs)
+        logger.info('Seeded industries')
+
+    # Sub Industries
+    if await db.sub_industries.count_documents({}) == 0:
+        subs = [
+            ('Web Development', 'Software'), ('Mobile Development', 'Software'),
+            ('Cloud Computing', 'Information Technology'), ('Cybersecurity', 'Information Technology'),
+            ('Investment Banking', 'Banking / Financial Services'), ('Insurance', 'Banking / Financial Services'),
+            ('Digital Marketing', 'Sales and Marketing'), ('Machine Learning', 'Artificial Intelligence'),
+        ]
+        docs = []
+        for i, (name, ind) in enumerate(subs):
+            docs.append({
+                'id': str(uuid.uuid4()), 'name': name, 'industry': ind, 'status': True,
+                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
+                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
+            })
+        await db.sub_industries.insert_many(docs)
+        logger.info('Seeded sub industries')
+
+    # Skills
+    if await db.skills.count_documents({}) == 0:
+        skills = [
+            'React.Js', 'Node.Js', 'Python', 'JavaScript (ES6+)', 'HTML5/CSS3', 'Git',
+            'AWS', 'Docker', 'Kubernetes', 'SQL', 'Java', 'Redux', 'Machine Learning', 'DevOps',
+        ]
+        docs = []
+        for i, name in enumerate(skills):
+            docs.append({
+                'id': str(uuid.uuid4()), 'name': name, 'status': True,
+                'updatedBy': '-', 'updatedAt': '09 Sep 2026',
+                'created_at': (datetime.utcnow() - timedelta(minutes=i)).isoformat(),
+            })
+        await db.skills.insert_many(docs)
+        logger.info('Seeded skills')
 
 
 @app.on_event('shutdown')

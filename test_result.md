@@ -285,18 +285,354 @@ backend:
         agent: "testing"
         comment: "GET /api/dashboard returns complete object with all required keys: stats (array of 4), jobsCreatedMonthly, jobsByIndustry, candidatesMonthly, recentCompanies, recentJobs, and totalCategories."
 
+  - task: "States Master - GET list"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/states returns seeded list of 16 states with proper structure. All seeded data is present."
+
+  - task: "States Master - POST create"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/states with {name: 'Test State', status: true} returns created object with id, updatedBy='Komal Saini', and updatedAt set correctly."
+
+  - task: "States Master - PUT update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT /api/states/{id} with {status: false} successfully updates status field and returns updated object."
+
+  - task: "States Master - DELETE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /api/states/{id} returns {success: true} and item is removed from database."
+
+  - task: "States Master - 404 handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT and DELETE operations with non-existent state id correctly return 404 Not Found."
+
+  - task: "Cities Master - GET list"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/cities returns seeded list of 8 cities. Each item has name, state, image, trending, and status fields. All cities are trending=true."
+
+  - task: "Cities Master - POST create"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/cities with {name: 'Test City', state: 'Maharashtra', trending: false, status: true, image: ''} returns created object with id."
+
+  - task: "Cities Master - PUT update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT /api/cities/{id} with {trending: true} successfully updates trending field and returns updated object."
+
+  - task: "Cities Master - DELETE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /api/cities/{id} returns {success: true} and removes the item."
+
+  - task: "Cities Master - 404 handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT and DELETE operations with non-existent city id correctly return 404 Not Found."
+
+  - task: "Industries Master - GET list"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/industries returns seeded list of 10 industries with proper structure."
+
+  - task: "Industries Master - POST create"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/industries with {name: 'Test Industry', status: true} returns created object with id."
+
+  - task: "Industries Master - PUT update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT /api/industries/{id} with {status: false} successfully updates status field."
+
+  - task: "Industries Master - DELETE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /api/industries/{id} returns {success: true} and removes the item."
+
+  - task: "Industries Master - 404 handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT and DELETE operations with non-existent industry id correctly return 404 Not Found."
+
+  - task: "Sub-Industries Master - GET list"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/sub-industries returns seeded list of 8 sub-industries. Each item has name, industry (parent name string), and status fields."
+
+  - task: "Sub-Industries Master - POST create"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/sub-industries with {name: 'Test Sub', industry: 'Software', status: true} returns created object with id."
+
+  - task: "Sub-Industries Master - PUT update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT /api/sub-industries/{id} with {status: false} successfully updates status field."
+
+  - task: "Sub-Industries Master - DELETE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /api/sub-industries/{id} returns {success: true} and removes the item."
+
+  - task: "Sub-Industries Master - 404 handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT and DELETE operations with non-existent sub-industry id correctly return 404 Not Found."
+
+  - task: "Skills Master - GET list"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/skills returns seeded list of 14 skills with proper structure."
+
+  - task: "Skills Master - POST create"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/skills with {name: 'Test Skill', status: true} returns created object with id."
+
+  - task: "Skills Master - PUT update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT /api/skills/{id} with {status: false} successfully updates status field."
+
+  - task: "Skills Master - DELETE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /api/skills/{id} returns {success: true} and removes the item."
+
+  - task: "Skills Master - 404 handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT and DELETE operations with non-existent skill id correctly return 404 Not Found."
+
+  - task: "Master Endpoints - Validation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST requests with empty or missing 'name' field correctly return 400 Bad Request with appropriate error message."
+
+  - task: "Master Endpoints - Authentication Required"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "All master endpoints (states, cities, industries, sub-industries, skills) correctly return 401/403 when called without Bearer token for GET, POST, PUT, and DELETE operations."
+
+  - task: "Public Endpoint - Trending Cities"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/public/trending-cities (NO auth required) returns array of 8 objects, each with 'name' and 'image' fields only, corresponding to trending+active cities (8 seeded metros). Endpoint is publicly accessible without authentication."
+
 frontend:
   # No frontend testing performed as per instructions
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "1.1"
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
-    - "All backend tests completed successfully"
+    - "All backend tests completed successfully including master endpoints"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -304,3 +640,5 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: "Completed comprehensive backend API testing. All 16 tests passed successfully. Tested: Authentication (login success/failure, /auth/me with/without token), Education Categories CRUD (GET, POST, PUT, DELETE with proper 404 handling), Education Sub Categories CRUD (GET, POST, PUT, DELETE), and Dashboard endpoint. All endpoints return correct status codes, proper data structures, and handle edge cases appropriately. The seeding is working correctly with 13 categories and 7 sub-categories. Authentication is properly secured with Bearer tokens. No issues found."
+  - agent: "testing"
+    message: "Completed testing of all 5 master endpoints (States, Cities, Industries, Sub-Industries, Skills). All 28 tests passed successfully. Verified: (1) States: 16 seeded, full CRUD working, 404 handling correct. (2) Cities: 8 seeded with all fields (name, state, image, trending, status), full CRUD working, 404 handling correct. (3) Industries: 10 seeded, full CRUD working, 404 handling correct. (4) Sub-Industries: 8 seeded with parent industry reference, full CRUD working, 404 handling correct. (5) Skills: 14 seeded, full CRUD working, 404 handling correct. (6) Validation: Empty/missing name correctly returns 400. (7) Authentication: All endpoints require Bearer token, return 401/403 without it. (8) Public endpoint /api/public/trending-cities works without auth, returns 8 cities with name+image only. All seeding data is correct, all CRUD operations work properly, error handling is appropriate. No issues found."
