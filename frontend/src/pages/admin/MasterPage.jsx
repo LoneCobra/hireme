@@ -201,7 +201,7 @@ export default function MasterPage() {
                   {cfg.hasImage && (
                     <td className="py-3 pr-4">
                       <div className="h-11 w-11 rounded-full flex items-center justify-center overflow-hidden" style={{ background: "radial-gradient(circle at 50% 30%, #23237a, #0c0c2b)" }}>
-                        {r.image ? <img src={r.image} alt={r.name} className="h-8 w-8 object-contain" /> : <ImageIcon className="h-5 w-5 text-white/50" />}
+                        {r.image ? <img src={r.image} alt={r.name} className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-white/50" />}
                       </div>
                     </td>
                   )}

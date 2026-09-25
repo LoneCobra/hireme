@@ -154,7 +154,7 @@ export default function MasterFormPage() {
               <Label className="text-gray-700">City Image</Label>
               <div className="mt-2 flex items-center gap-4">
                 <div className="h-20 w-20 rounded-full flex items-center justify-center overflow-hidden shrink-0" style={{ background: "radial-gradient(circle at 50% 30%, #23237a, #0c0c2b)" }}>
-                  {form.image ? <img src={form.image} alt="preview" className="h-14 w-14 object-contain" /> : <ImageIcon className="h-7 w-7 text-white/50" />}
+                  {form.image ? <img src={form.image} alt="preview" className="h-full w-full object-cover" /> : <ImageIcon className="h-7 w-7 text-white/50" />}
                 </div>
                 <div>
                   <input id="cityimg" type="file" accept="image/*" onChange={onFile} className="hidden" />
