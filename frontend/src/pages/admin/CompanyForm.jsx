@@ -29,6 +29,15 @@ const STATUS_OPTIONS = [
   { value: "blocked", label: "Blocked", color: "#f61d25" },
 ];
 
+function Field({ label, children, required }) {
+  return (
+    <div>
+      <Label className="text-gray-700">{label}{required && <span className="text-[#f61d25]"> *</span>}</Label>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
 export default function CompanyForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -87,13 +96,6 @@ export default function CompanyForm() {
 
   const initials = (form.name || "Co").slice(0, 2).toUpperCase();
   const filteredSubs = subIndustries.filter((s) => !form.industry || s.industry === form.industry);
-
-  const Field = ({ label, children, required }) => (
-    <div>
-      <Label className="text-gray-700">{label}{required && <span className="text-[#f61d25]"> *</span>}</Label>
-      <div className="mt-1.5">{children}</div>
-    </div>
-  );
 
   return (
     <AdminLayout title="Companies">
