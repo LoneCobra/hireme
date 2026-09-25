@@ -874,17 +874,99 @@ backend:
         comment: "GET /api/languages without Bearer token correctly returns 403 Forbidden. All new master endpoints require authentication and return 401/403 without token."
 
 frontend:
-  # No frontend testing performed as per instructions
+  - task: "Master Tables - Infinite Re-fetch Loop Bug Fix (Cities)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified /admin/masters/cities (4953 cities) - NO infinite loop detected. Page makes 2 GET requests due to React.StrictMode in development (expected behavior, will be 1 in production). Stat cards show stable values (TOTAL: 4953, ACTIVE: 4953, INACTIVE: 0, TRENDING: 8). No flickering or continuous re-fetching observed. Bug fix working correctly."
+
+  - task: "Master Tables - Infinite Re-fetch Loop Bug Fix (States)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified /admin/masters/states (36 states) - NO infinite loop detected. Page makes 2 GET requests due to React.StrictMode (expected). Stat cards show stable values (TOTAL: 36, ACTIVE: 36). No flickering observed. Bug fix working correctly."
+
+  - task: "Master Tables - Infinite Re-fetch Loop Bug Fix (Languages)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified /admin/masters/languages (empty master) - NO infinite loop detected. Page makes 2 GET requests due to React.StrictMode (expected). Empty state displayed correctly. No flickering observed. Bug fix working correctly."
+
+  - task: "Master Tables - Infinite Re-fetch Loop Bug Fix (Skills)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified /admin/masters/skills - NO infinite loop detected. Page makes 2 GET requests due to React.StrictMode (expected). Stat cards show stable values (TOTAL: 0). No flickering observed. Bug fix working correctly."
+
+  - task: "Master Tables - Regression Test (Data Persistence Across Masters)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "CRITICAL REGRESSION TEST PASSED. Verified switching from cities to languages shows correct data. NO background calls to cities API when on languages page. Each master displays its own data correctly. NO stale data persisting across masters. The useEffect with [key, load] dependency correctly resets state when master key changes."
+
+  - task: "Master Tables - Multiple Master Switches Test"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified multiple master switches (cities -> states -> skills -> languages). Each master calls only its own API endpoint. NO data leakage detected across any master switches. Total leaked API calls: 0. Bug fix working correctly across all navigation scenarios."
+
+  - task: "Admin Login Flow"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/Login.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Login with admin@hireme.in / admin123 works correctly. Redirects to /admin/dashboard after successful authentication. Token stored in localStorage. Authentication flow working as expected."
 
 metadata:
   created_by: "testing_agent"
-  version: "1.2"
-  test_sequence: 3
-  run_ui: false
+  version: "1.3"
+  test_sequence: 4
+  run_ui: true
 
 test_plan:
   current_focus:
-    - "All backend tests completed successfully including NEW master endpoints"
+    - "Master tables infinite loop bug fix verification completed"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -896,3 +978,5 @@ agent_communication:
     message: "Completed testing of all 5 master endpoints (States, Cities, Industries, Sub-Industries, Skills). All 28 tests passed successfully. Verified: (1) States: 16 seeded, full CRUD working, 404 handling correct. (2) Cities: 8 seeded with all fields (name, state, image, trending, status), full CRUD working, 404 handling correct. (3) Industries: 10 seeded, full CRUD working, 404 handling correct. (4) Sub-Industries: 8 seeded with parent industry reference, full CRUD working, 404 handling correct. (5) Skills: 14 seeded, full CRUD working, 404 handling correct. (6) Validation: Empty/missing name correctly returns 400. (7) Authentication: All endpoints require Bearer token, return 401/403 without it. (8) Public endpoint /api/public/trending-cities works without auth, returns 8 cities with name+image only. All seeding data is correct, all CRUD operations work properly, error handling is appropriate. No issues found."
   - agent: "testing"
     message: "Completed comprehensive testing of 17 NEW generic master endpoints. All 21 tests passed successfully. Tested: (1) Languages CRUD - all operations working. (2) Currencies CRUD - code & symbol fields persist correctly. (3) Email Templates CRUD - all fields (key, subject, body, recipient, dispatch) persist correctly. (4) Company FAQs CRUD - answer field persists correctly. (5) Function Roles CRUD - category field persists correctly. (6) Perk Benefits, Notice Periods, Company Types, Company Sizes, Company Subscriptions, Candidate FAQs, Job Types, Function Role Categories, Experience Levels, Workplace Types, Salary Options, Perk Benefit Categories - all CRUD operations working. (7) Bulk endpoints: languages/bulk and education-categories/bulk both return correct inserted count and persist items. (8) Validation: empty name correctly returns 400. (9) Authentication: endpoints without Bearer token correctly return 403. All collections start empty as expected. All CRUD operations work correctly. All field persistence verified. No issues found."
+  - agent: "testing"
+    message: "FRONTEND BUG FIX VERIFICATION COMPLETED - Master Tables Infinite Loop Issue. Tested all 4 master pages (cities with 4953 records, states with 36 records, languages empty, skills empty) as requested. RESULTS: ✅ NO infinite loop detected on any master page. ✅ Each page makes exactly 1 API call per visit (2 calls observed due to React.StrictMode in development, which is expected behavior and will be 1 in production). ✅ Stat cards show stable values with no flickering. ✅ CRITICAL REGRESSION TEST PASSED: Switching between masters (cities -> languages, cities -> states -> skills -> languages) shows correct data for each master with NO stale data persisting and NO background API calls to previous masters. ✅ The bug fix implementation using useCallback with [key] dependency and useEffect with [key, load] dependency is working correctly. The reported 'fluctuating' issue has been successfully resolved. All 6 test scenarios PASSED."

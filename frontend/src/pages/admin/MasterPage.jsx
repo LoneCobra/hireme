@@ -37,7 +37,7 @@ function StatCard({ label, value, Icon, color }) {
 
 export default function MasterPage() {
   const { key } = useParams();
-  const cfg = getMaster(key);
+  const cfg = useMemo(() => getMaster(key), [key]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileRef = useRef(null);
@@ -49,12 +49,17 @@ export default function MasterPage() {
   const [deleteId, setDeleteId] = useState(null);
 
   const load = useCallback(() => {
-    if (!cfg) return;
     setLoading(true);
-    api.get(cfg.api).then((res) => setRows(res.data)).finally(() => setLoading(false));
-  }, [cfg]);
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); setQuery(""); setTab("all"); }, [key]);
+    api.get(`/${key}`).then((res) => setRows(res.data)).catch(() => setRows([])).finally(() => setLoading(false));
+  }, [key]);
+
+  // Re-run only when the master key changes (fixes infinite re-fetch loop
+  // and stale data persisting across masters on the shared route).
+  useEffect(() => {
+    setPage(1); setQuery(""); setTab("all"); setRows([]);
+    load();
+  }, [key, load]);
+
   useEffect(() => { setPage(1); }, [query, tab]);
 
   const counts = useMemo(() => ({
