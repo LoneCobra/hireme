@@ -958,15 +958,63 @@ frontend:
         agent: "testing"
         comment: "Login with admin@hireme.in / admin123 works correctly. Redirects to /admin/dashboard after successful authentication. Token stored in localStorage. Authentication flow working as expected."
 
+  - task: "Sample Format CSV Download - Simple Master (Languages)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TEST 1 PASSED. Sample Format button on /admin/masters/languages downloads 'languages-sample.csv' with correct header 'name,status' and 2 example data rows. CSV content verified: 'Example Language,true' and 'Another Language,true'. Toast message: 'Sample template downloaded - Fill it and use Bulk Upload.' Feature working correctly."
+
+  - task: "Sample Format CSV Download - Parent-Linked Master (Sub-Industries)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TEST 2 PASSED. Sample Format button on /admin/masters/sub-industries downloads 'sub-industries-sample.csv' with correct header 'name,industry,status'. CRITICAL: Industry column contains existing industry name 'Software' (fetched from API). CSV content: 'Example Sub Industry,Software,true' and 'Another Sub Industry,Software,true'. Toast correctly instructs: 'The industry column must exactly match an existing Industry.' Parent-linked master sample generation working correctly."
+
+  - task: "Bulk Upload CSV - Simple Master with Boolean Conversion (Languages)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TEST 3 PASSED. Bulk Upload on /admin/masters/languages with CSV containing Hindi (true), Tamil (true), Telugu (false) works correctly. Success toast: 'Bulk upload complete - 3 language(s) added.' CRITICAL BOOLEAN CONVERSION TEST: Hindi=Active (green), Tamil=Active (green), Telugu=Inactive (gray). String 'false' correctly converted to boolean false, resulting in Inactive status. Stats show TOTAL:3, ACTIVE:2, INACTIVE:1. Boolean conversion working perfectly."
+
+  - task: "Bulk Upload CSV - Parent-Linked Master (Sub-Industries)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/admin/MasterPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TEST 4 PASSED. Bulk Upload on /admin/masters/sub-industries with CSV containing 'Web Development,Software,true' and 'Mobile Apps,Software,true' works correctly. Success toast: 'Bulk upload complete - 2 sub industry(s) added.' Both items appear in table with correct parent reference: Web Development → Software, Mobile Apps → Software. Stats show TOTAL:2, ACTIVE:2. Parent-linked bulk upload working correctly."
+
 metadata:
   created_by: "testing_agent"
-  version: "1.3"
-  test_sequence: 4
+  version: "1.4"
+  test_sequence: 5
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Master tables infinite loop bug fix verification completed"
+    - "Sample Format CSV download and Bulk Upload flow verification completed"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -980,3 +1028,5 @@ agent_communication:
     message: "Completed comprehensive testing of 17 NEW generic master endpoints. All 21 tests passed successfully. Tested: (1) Languages CRUD - all operations working. (2) Currencies CRUD - code & symbol fields persist correctly. (3) Email Templates CRUD - all fields (key, subject, body, recipient, dispatch) persist correctly. (4) Company FAQs CRUD - answer field persists correctly. (5) Function Roles CRUD - category field persists correctly. (6) Perk Benefits, Notice Periods, Company Types, Company Sizes, Company Subscriptions, Candidate FAQs, Job Types, Function Role Categories, Experience Levels, Workplace Types, Salary Options, Perk Benefit Categories - all CRUD operations working. (7) Bulk endpoints: languages/bulk and education-categories/bulk both return correct inserted count and persist items. (8) Validation: empty name correctly returns 400. (9) Authentication: endpoints without Bearer token correctly return 403. All collections start empty as expected. All CRUD operations work correctly. All field persistence verified. No issues found."
   - agent: "testing"
     message: "FRONTEND BUG FIX VERIFICATION COMPLETED - Master Tables Infinite Loop Issue. Tested all 4 master pages (cities with 4953 records, states with 36 records, languages empty, skills empty) as requested. RESULTS: ✅ NO infinite loop detected on any master page. ✅ Each page makes exactly 1 API call per visit (2 calls observed due to React.StrictMode in development, which is expected behavior and will be 1 in production). ✅ Stat cards show stable values with no flickering. ✅ CRITICAL REGRESSION TEST PASSED: Switching between masters (cities -> languages, cities -> states -> skills -> languages) shows correct data for each master with NO stale data persisting and NO background API calls to previous masters. ✅ The bug fix implementation using useCallback with [key] dependency and useEffect with [key, load] dependency is working correctly. The reported 'fluctuating' issue has been successfully resolved. All 6 test scenarios PASSED."
+  - agent: "testing"
+    message: "CSV SAMPLE FORMAT & BULK UPLOAD FLOW VERIFICATION COMPLETED. Tested all 4 scenarios as requested: ✅ TEST 1 (Simple master sample): languages-sample.csv downloads with header 'name,status' and 2 data rows. ✅ TEST 2 (Parent-linked master sample): sub-industries-sample.csv downloads with header 'name,industry,status' and industry column contains EXISTING industry name 'Software' (fetched from API). Toast correctly instructs about parent column requirement. ✅ TEST 3 (Bulk upload with boolean conversion): Uploaded Hindi/Tamil (true) and Telugu (false). CRITICAL TEST PASSED: Telugu shows as Inactive (string 'false' correctly converted to boolean false). Stats: TOTAL:3, ACTIVE:2, INACTIVE:1. ✅ TEST 4 (Parent-linked bulk upload): Uploaded Web Development and Mobile Apps linked to Software industry. Both appear with correct parent reference. All 4 tests PASSED. No issues found."

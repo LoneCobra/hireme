@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   Plus, Search, Pencil, Trash2, RefreshCw, Upload, CheckCircle2, XCircle,
-  TrendingUp, LayoutGrid, ImageIcon,
+  TrendingUp, LayoutGrid, ImageIcon, Download,
 } from "lucide-react";
 import AdminLayout from "./AdminLayout";
 import { Button } from "../../components/ui/button";
@@ -20,6 +20,65 @@ import api from "../../lib/api";
 import { getMaster } from "./mastersConfig";
 
 const PAGE_SIZE = 12;
+const BOOL_FIELDS = ["status", "trending", "dispatch"];
+
+const toBool = (v) => {
+  if (typeof v === "boolean") return v;
+  return ["1", "true", "yes", "active", "y"].includes(String(v).trim().toLowerCase());
+};
+
+const csvEscape = (v) => {
+  const s = String(v ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+// Full CSV parser (handles quoted fields, commas & newlines inside quotes).
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQ = false, i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQ = false; i++; continue;
+      }
+      field += ch; i++; continue;
+    }
+    if (ch === '"') { inQ = true; i++; continue; }
+    if (ch === ",") { row.push(field); field = ""; i++; continue; }
+    if (ch === "\r") { i++; continue; }
+    if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+    field += ch; i++;
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// Ordered column headers for a master's bulk CSV.
+function buildHeaders(cfg) {
+  const cols = ["name"];
+  if (cfg.parent) cols.push(cfg.parent.key);
+  (cfg.fields || []).forEach((f) => { if (f.type !== "image") cols.push(f.key); });
+  if (cfg.hasTrending) cols.push("trending");
+  cols.push("status");
+  return cols;
+}
+
+function sampleValue(col, cfg, parentExample, idx) {
+  if (col === "name") return `${idx === 0 ? "Example" : "Another"} ${cfg.itemLabel}`;
+  if (col === "status") return "true";
+  if (col === "trending") return idx === 0 ? "true" : "false";
+  if (cfg.parent && col === cfg.parent.key) return parentExample;
+  const f = (cfg.fields || []).find((x) => x.key === col);
+  if (f) {
+    if (f.type === "switch") return idx === 0 ? "true" : "false";
+    if (f.type === "select") return (f.options && f.options[0]) || "";
+    if (f.placeholder) return f.placeholder.replace(/^e\.g\.\s*/i, "");
+    return `Sample ${f.label}`;
+  }
+  return "";
+}
 
 function StatCard({ label, value, Icon, color }) {
   return (
@@ -108,21 +167,50 @@ export default function MasterPage() {
       if (file.name.endsWith(".json")) {
         items = JSON.parse(text);
       } else {
-        const lines = text.split(/\r?\n/).filter((l) => l.trim());
-        const headers = lines[0].split(",").map((h) => h.trim());
-        items = lines.slice(1).map((line) => {
-          const vals = line.split(",");
+        const rows = parseCSV(text).filter((r) => r.some((c) => String(c).trim() !== ""));
+        const headers = rows[0].map((h) => h.trim());
+        items = rows.slice(1).map((vals) => {
           const obj = {};
-          headers.forEach((h, i) => { obj[h] = (vals[i] || "").trim(); });
+          headers.forEach((h, i) => { obj[h] = (vals[i] ?? "").trim(); });
           return obj;
         });
       }
+      // Convert boolean-like text ("true"/"false"/"active") into real booleans.
+      items = items.map((it) => {
+        const o = { ...it };
+        BOOL_FIELDS.forEach((bf) => { if (bf in o && o[bf] !== "") o[bf] = toBool(o[bf]); });
+        return o;
+      });
       const { data } = await api.post(`${cfg.api}/bulk`, { items });
-      toast({ title: "Bulk upload complete", description: `${data.inserted} ${cfg.itemLabel.toLowerCase()}s added.` });
+      toast({ title: "Bulk upload complete", description: `${data.inserted} ${cfg.itemLabel.toLowerCase()}(s) added.` });
       load();
     } catch (err) {
-      toast({ title: "Bulk upload failed", description: "Use CSV with a 'name' header (or JSON array).", variant: "destructive" });
+      toast({ title: "Bulk upload failed", description: "Use the sample CSV template (or a JSON array).", variant: "destructive" });
     } finally { if (fileRef.current) fileRef.current.value = ""; }
+  };
+
+  const downloadSample = async () => {
+    let parentExample = "Existing Parent Name";
+    if (cfg.parent) {
+      try {
+        const { data } = await api.get(cfg.parent.optionsApi);
+        if (data && data[0]) parentExample = data[0].name;
+      } catch (e) { /* ignore */ }
+    }
+    const headers = buildHeaders(cfg);
+    const sampleRows = [0, 1].map((idx) => headers.map((h) => sampleValue(h, cfg, parentExample, idx)));
+    const csv = [headers, ...sampleRows].map((r) => r.map(csvEscape).join(",")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${key}-sample.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: "Sample template downloaded",
+      description: cfg.parent
+        ? `Fill it, then Bulk Upload. The "${cfg.parent.key}" column must exactly match an existing ${cfg.parent.label}.`
+        : "Fill it and use Bulk Upload.",
+    });
   };
 
   const Icon = cfg.Icon;
@@ -143,6 +231,7 @@ export default function MasterPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={load}><RefreshCw className="h-4 w-4 mr-2" /> Refresh</Button>
+          <Button variant="outline" onClick={downloadSample}><Download className="h-4 w-4 mr-2" /> Sample Format</Button>
           <input ref={fileRef} type="file" accept=".csv,.json" onChange={onBulkFile} className="hidden" />
           <Button variant="outline" onClick={() => fileRef.current?.click()} className="border-[#2c0eee] text-[#2c0eee] hover:bg-[#2c0eee] hover:text-white">
             <Upload className="h-4 w-4 mr-2" /> Bulk Upload
