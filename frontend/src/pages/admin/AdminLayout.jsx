@@ -1,21 +1,10 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Database, ChevronDown, GraduationCap,
-  BookCopy, MapPin, Building, Menu, Search, Bell, LogOut,
-  Factory, Layers, Sparkles,
+  LayoutDashboard, Database, ChevronDown, Menu, Search, Bell, LogOut,
 } from "lucide-react";
 import Logo from "../../components/Logo";
-
-const masterItems = [
-  { label: "Education Categories", to: "/admin/masters/education-categories", icon: GraduationCap },
-  { label: "Education Sub Categories", to: "/admin/masters/education-sub-categories", icon: BookCopy },
-  { label: "Industries", to: "/admin/masters/industries", icon: Factory },
-  { label: "Sub Industries", to: "/admin/masters/sub-industries", icon: Layers },
-  { label: "Skills", to: "/admin/masters/skills", icon: Sparkles },
-  { label: "States", to: "/admin/masters/states", icon: MapPin },
-  { label: "Cities", to: "/admin/masters/cities", icon: Building },
-];
+import { MASTERS, MASTER_GROUPS } from "./mastersConfig";
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
@@ -59,12 +48,23 @@ export default function AdminLayout({ title, children }) {
             <ChevronDown className={`h-4 w-4 transition-transform ${mastersOpen ? "rotate-180" : ""}`} />
           </button>
           {mastersOpen && (
-            <div className="pl-3 space-y-1">
-              {masterItems.map((m) => (
-                <NavLink key={m.label} to={m.to}
-                  className={({ isActive }) => `${linkBase} ${isActive && m.to !== "#" ? "bg-[#f61d25] text-white shadow-lg shadow-[#f61d25]/30" : "hover:bg-white/5 hover:text-white text-gray-400"}`}>
-                  <m.icon className="h-[18px] w-[18px]" /> <span className="truncate">{m.label}</span>
-                </NavLink>
+            <div className="pl-2 space-y-3 pb-2">
+              {MASTER_GROUPS.map((group) => (
+                <div key={group.label}>
+                  <p className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{group.label}</p>
+                  {group.keys.map((k) => {
+                    const m = MASTERS[k];
+                    if (!m) return null;
+                    const to = `/admin/masters/${k}`;
+                    const active = location.pathname.startsWith(to);
+                    return (
+                      <NavLink key={k} to={to}
+                        className={`${linkBase} ${active ? "bg-[#f61d25] text-white shadow-lg shadow-[#f61d25]/30" : "hover:bg-white/5 hover:text-white text-gray-400"}`}>
+                        <m.Icon className="h-[18px] w-[18px] shrink-0" /> <span className="truncate">{m.title}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
               ))}
             </div>
           )}

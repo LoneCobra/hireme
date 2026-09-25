@@ -621,18 +621,270 @@ backend:
         agent: "testing"
         comment: "GET /api/public/trending-cities (NO auth required) returns array of 8 objects, each with 'name' and 'image' fields only, corresponding to trending+active cities (8 seeded metros). Endpoint is publicly accessible without authentication."
 
+  - task: "Languages Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/languages returns empty array initially. POST with {name:'English', status:true} creates item with id. PUT updates status correctly. DELETE removes item and returns {success:true}. All CRUD operations working correctly."
+
+  - task: "Languages Master - Bulk endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/languages/bulk with {items:[{name:'Hindi'},{name:'Tamil'},{name:'Telugu'}]} returns {inserted:3}. GET verifies all 3 items created. Bulk endpoint working correctly."
+
+  - task: "Currencies Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/currencies returns empty array initially. POST with {name:'Indian Rupee', code:'INR', symbol:'₹', status:true} creates item with id. All fields (code, symbol) persist correctly in GET response. PUT and DELETE work correctly."
+
+  - task: "Email Templates Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/email-templates returns empty array initially. POST with {name:'Welcome Email', key:'welcome', subject:'Welcome!', recipient:'Candidate', dispatch:true, body:'<p>Hi</p>', status:true} creates item. All fields (key, subject, body, recipient, dispatch) persist correctly. PUT {dispatch:false} updates correctly. DELETE works."
+
+  - task: "Company FAQs Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/company-faqs returns empty array initially. POST with {name:'What is HireMe?', answer:'A job portal', status:true} creates item. Answer field persists correctly. DELETE works correctly."
+
+  - task: "Function Roles Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/function-roles returns empty array initially. POST with {name:'Backend Engineer', category:'Software', status:true} creates item. Category field persists correctly. All CRUD operations working."
+
+  - task: "Perk Benefits Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/perk-benefits returns 200 with empty array. POST {name:'Test Perk', category:'Health', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Notice Periods Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/notice-periods returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Company Types Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/company-types returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Company Sizes Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/company-sizes returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Company Subscriptions Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/company-subscriptions returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Candidate FAQs Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/candidate-faqs returns 200 with empty array. POST {name:'Test FAQ', answer:'Test answer', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Job Types Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/job-types returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Function Role Categories Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/function-role-categories returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Experience Levels Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/experience-levels returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Workplace Types Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/workplace-types returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Salary Options Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/salary-options returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Perk Benefit Categories Master - CRUD operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/perk-benefit-categories returns 200 with empty array. POST {name:'Test', status:true} returns object with id. All CRUD operations working correctly."
+
+  - task: "Education Categories - Bulk endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/education-categories/bulk with {items:[{name:'MBA',trending:true},{name:'MCA'}]} returns {inserted:2}. GET verifies both items created. Bulk endpoint working correctly."
+
+  - task: "Master Endpoints - Validation (NEW masters)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/currencies with empty name correctly returns 400 Bad Request. Validation working correctly for all new master endpoints."
+
+  - task: "Master Endpoints - Authentication Required (NEW masters)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/languages without Bearer token correctly returns 403 Forbidden. All new master endpoints require authentication and return 401/403 without token."
+
 frontend:
   # No frontend testing performed as per instructions
 
 metadata:
   created_by: "testing_agent"
-  version: "1.1"
-  test_sequence: 2
+  version: "1.2"
+  test_sequence: 3
   run_ui: false
 
 test_plan:
   current_focus:
-    - "All backend tests completed successfully including master endpoints"
+    - "All backend tests completed successfully including NEW master endpoints"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -642,3 +894,5 @@ agent_communication:
     message: "Completed comprehensive backend API testing. All 16 tests passed successfully. Tested: Authentication (login success/failure, /auth/me with/without token), Education Categories CRUD (GET, POST, PUT, DELETE with proper 404 handling), Education Sub Categories CRUD (GET, POST, PUT, DELETE), and Dashboard endpoint. All endpoints return correct status codes, proper data structures, and handle edge cases appropriately. The seeding is working correctly with 13 categories and 7 sub-categories. Authentication is properly secured with Bearer tokens. No issues found."
   - agent: "testing"
     message: "Completed testing of all 5 master endpoints (States, Cities, Industries, Sub-Industries, Skills). All 28 tests passed successfully. Verified: (1) States: 16 seeded, full CRUD working, 404 handling correct. (2) Cities: 8 seeded with all fields (name, state, image, trending, status), full CRUD working, 404 handling correct. (3) Industries: 10 seeded, full CRUD working, 404 handling correct. (4) Sub-Industries: 8 seeded with parent industry reference, full CRUD working, 404 handling correct. (5) Skills: 14 seeded, full CRUD working, 404 handling correct. (6) Validation: Empty/missing name correctly returns 400. (7) Authentication: All endpoints require Bearer token, return 401/403 without it. (8) Public endpoint /api/public/trending-cities works without auth, returns 8 cities with name+image only. All seeding data is correct, all CRUD operations work properly, error handling is appropriate. No issues found."
+  - agent: "testing"
+    message: "Completed comprehensive testing of 17 NEW generic master endpoints. All 21 tests passed successfully. Tested: (1) Languages CRUD - all operations working. (2) Currencies CRUD - code & symbol fields persist correctly. (3) Email Templates CRUD - all fields (key, subject, body, recipient, dispatch) persist correctly. (4) Company FAQs CRUD - answer field persists correctly. (5) Function Roles CRUD - category field persists correctly. (6) Perk Benefits, Notice Periods, Company Types, Company Sizes, Company Subscriptions, Candidate FAQs, Job Types, Function Role Categories, Experience Levels, Workplace Types, Salary Options, Perk Benefit Categories - all CRUD operations working. (7) Bulk endpoints: languages/bulk and education-categories/bulk both return correct inserted count and persist items. (8) Validation: empty name correctly returns 400. (9) Authentication: endpoints without Bearer token correctly return 403. All collections start empty as expected. All CRUD operations work correctly. All field persistence verified. No issues found."

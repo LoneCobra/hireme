@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for HireMe Admin
-Tests all authentication, CRUD operations, and dashboard endpoints
+Comprehensive backend API test for HireMe Admin NEW master endpoints.
+Tests all CRUD operations + bulk endpoints for generic masters.
 """
 import requests
 import json
 import sys
-from typing import Optional
 
-# Base URL from frontend/.env
+# Backend URL from frontend/.env
 BASE_URL = "https://hire-admin.preview.emergentagent.com/api"
 
 # Test credentials
@@ -16,660 +15,395 @@ ADMIN_EMAIL = "admin@hireme.in"
 ADMIN_PASSWORD = "admin123"
 
 # Global token storage
-auth_token: Optional[str] = None
+TOKEN = None
 
-# Test results tracking
-test_results = {
-    "passed": [],
-    "failed": [],
-    "total": 0
-}
+def log(msg, level="INFO"):
+    """Print formatted log message"""
+    print(f"[{level}] {msg}")
 
-
-def log_test(test_name: str, passed: bool, details: str = ""):
-    """Log test result"""
-    test_results["total"] += 1
-    if passed:
-        test_results["passed"].append(test_name)
-        print(f"✅ PASS: {test_name}")
-        if details:
-            print(f"   {details}")
-    else:
-        test_results["failed"].append(test_name)
-        print(f"❌ FAIL: {test_name}")
-        if details:
-            print(f"   {details}")
-
-
-def get_headers(with_auth: bool = False) -> dict:
-    """Get request headers"""
-    headers = {"Content-Type": "application/json"}
-    if with_auth and auth_token:
-        headers["Authorization"] = f"Bearer {auth_token}"
-    return headers
-
-
-# ============ AUTH TESTS ============
-
-def test_1_login_success():
-    """Test 1: POST /api/auth/login with correct credentials"""
-    global auth_token
+def login():
+    """Login and get Bearer token"""
+    global TOKEN
+    log("Logging in as admin...")
+    url = f"{BASE_URL}/auth/login"
+    payload = {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+    
     try:
-        response = requests.post(
-            f"{BASE_URL}/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-            headers=get_headers()
-        )
+        resp = requests.post(url, json=payload, timeout=10)
+        if resp.status_code != 200:
+            log(f"Login failed: {resp.status_code} - {resp.text}", "ERROR")
+            return False
         
-        if response.status_code != 200:
-            log_test("Login with correct credentials", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
+        data = resp.json()
+        TOKEN = data.get("access_token")
+        if not TOKEN:
+            log("No access_token in login response", "ERROR")
+            return False
         
-        data = response.json()
-        
-        # Check response structure
-        if "access_token" not in data:
-            log_test("Login with correct credentials", False, "Missing 'access_token' in response")
-            return
-        
-        if data.get("token_type") != "bearer":
-            log_test("Login with correct credentials", False, 
-                    f"Expected token_type='bearer', got '{data.get('token_type')}'")
-            return
-        
-        user = data.get("user", {})
-        if not user.get("name") or not user.get("email") or user.get("role") != "Super Admin":
-            log_test("Login with correct credentials", False, 
-                    f"Invalid user data: {user}")
-            return
-        
-        # Store token for subsequent tests
-        auth_token = data["access_token"]
-        
-        log_test("Login with correct credentials", True, 
-                f"Token received, user: {user['name']} ({user['role']})")
-        
+        log(f"Login successful. User: {data.get('user', {}).get('name')}")
+        return True
     except Exception as e:
-        log_test("Login with correct credentials", False, f"Exception: {str(e)}")
+        log(f"Login exception: {e}", "ERROR")
+        return False
 
+def get_headers():
+    """Get headers with Bearer token"""
+    return {"Authorization": f"Bearer {TOKEN}"}
 
-def test_2_login_wrong_password():
-    """Test 2: POST /api/auth/login with wrong password"""
+def test_master_crud(path, create_payload, update_payload, name_field="name"):
+    """
+    Test full CRUD operations for a master endpoint.
+    Returns (success, error_message)
+    """
+    log(f"\n{'='*60}")
+    log(f"Testing: {path}")
+    log(f"{'='*60}")
+    
+    # 1. GET list (should return 200 with array)
+    log(f"1. GET /{path} - List")
     try:
-        response = requests.post(
-            f"{BASE_URL}/auth/login",
-            json={"email": ADMIN_EMAIL, "password": "wrongpassword"},
-            headers=get_headers()
-        )
+        resp = requests.get(f"{BASE_URL}/{path}", headers=get_headers(), timeout=10)
+        if resp.status_code != 200:
+            return False, f"GET /{path} returned {resp.status_code}, expected 200"
         
-        if response.status_code == 401:
-            log_test("Login with wrong password returns 401", True)
+        items = resp.json()
+        if not isinstance(items, list):
+            return False, f"GET /{path} did not return array, got {type(items)}"
+        
+        initial_count = len(items)
+        log(f"   ✓ GET /{path} returned {initial_count} items")
+    except Exception as e:
+        return False, f"GET /{path} exception: {e}"
+    
+    # 2. POST create
+    log(f"2. POST /{path} - Create")
+    try:
+        resp = requests.post(f"{BASE_URL}/{path}", json=create_payload, headers=get_headers(), timeout=10)
+        if resp.status_code not in [200, 201]:
+            return False, f"POST /{path} returned {resp.status_code}, expected 200/201. Response: {resp.text}"
+        
+        created = resp.json()
+        if not created.get("id"):
+            return False, f"POST /{path} response missing 'id' field"
+        
+        created_id = created["id"]
+        log(f"   ✓ POST /{path} created item with id: {created_id}")
+        
+        # Verify all fields persisted
+        for key, value in create_payload.items():
+            if key not in created:
+                return False, f"POST /{path} response missing field '{key}'"
+            if created[key] != value:
+                return False, f"POST /{path} field '{key}' mismatch: expected {value}, got {created[key]}"
+        
+        log(f"   ✓ All fields persisted correctly")
+    except Exception as e:
+        return False, f"POST /{path} exception: {e}"
+    
+    # 3. GET list again (should have +1 item)
+    log(f"3. GET /{path} - Verify creation")
+    try:
+        resp = requests.get(f"{BASE_URL}/{path}", headers=get_headers(), timeout=10)
+        items = resp.json()
+        new_count = len(items)
+        if new_count != initial_count + 1:
+            return False, f"GET /{path} count mismatch: expected {initial_count + 1}, got {new_count}"
+        
+        log(f"   ✓ GET /{path} now has {new_count} items (+1)")
+    except Exception as e:
+        return False, f"GET /{path} verification exception: {e}"
+    
+    # 4. PUT update
+    log(f"4. PUT /{path}/{created_id} - Update")
+    try:
+        resp = requests.put(f"{BASE_URL}/{path}/{created_id}", json=update_payload, headers=get_headers(), timeout=10)
+        if resp.status_code != 200:
+            return False, f"PUT /{path}/{created_id} returned {resp.status_code}, expected 200. Response: {resp.text}"
+        
+        updated = resp.json()
+        for key, value in update_payload.items():
+            if key not in updated:
+                return False, f"PUT /{path} response missing field '{key}'"
+            if updated[key] != value:
+                return False, f"PUT /{path} field '{key}' not updated: expected {value}, got {updated[key]}"
+        
+        log(f"   ✓ PUT /{path}/{created_id} updated successfully")
+    except Exception as e:
+        return False, f"PUT /{path} exception: {e}"
+    
+    # 5. DELETE
+    log(f"5. DELETE /{path}/{created_id}")
+    try:
+        resp = requests.delete(f"{BASE_URL}/{path}/{created_id}", headers=get_headers(), timeout=10)
+        if resp.status_code != 200:
+            return False, f"DELETE /{path}/{created_id} returned {resp.status_code}, expected 200"
+        
+        result = resp.json()
+        if not result.get("success"):
+            return False, f"DELETE /{path} did not return success:true"
+        
+        log(f"   ✓ DELETE /{path}/{created_id} successful")
+    except Exception as e:
+        return False, f"DELETE /{path} exception: {e}"
+    
+    # 6. Verify deletion
+    log(f"6. GET /{path} - Verify deletion")
+    try:
+        resp = requests.get(f"{BASE_URL}/{path}", headers=get_headers(), timeout=10)
+        items = resp.json()
+        final_count = len(items)
+        if final_count != initial_count:
+            return False, f"GET /{path} count after delete: expected {initial_count}, got {final_count}"
+        
+        log(f"   ✓ GET /{path} back to {final_count} items (deletion verified)")
+    except Exception as e:
+        return False, f"GET /{path} deletion verification exception: {e}"
+    
+    log(f"✅ {path} - ALL CRUD TESTS PASSED")
+    return True, None
+
+def test_bulk_endpoint(path, bulk_items):
+    """
+    Test bulk creation endpoint.
+    Returns (success, error_message)
+    """
+    log(f"\n{'='*60}")
+    log(f"Testing BULK: {path}/bulk")
+    log(f"{'='*60}")
+    
+    # Get initial count
+    try:
+        resp = requests.get(f"{BASE_URL}/{path}", headers=get_headers(), timeout=10)
+        initial_count = len(resp.json())
+        log(f"Initial count: {initial_count}")
+    except Exception as e:
+        return False, f"GET /{path} before bulk exception: {e}"
+    
+    # POST bulk
+    log(f"POST /{path}/bulk with {len(bulk_items)} items")
+    try:
+        payload = {"items": bulk_items}
+        resp = requests.post(f"{BASE_URL}/{path}/bulk", json=payload, headers=get_headers(), timeout=10)
+        if resp.status_code not in [200, 201]:
+            return False, f"POST /{path}/bulk returned {resp.status_code}, expected 200/201. Response: {resp.text}"
+        
+        result = resp.json()
+        inserted = result.get("inserted")
+        if inserted != len(bulk_items):
+            return False, f"POST /{path}/bulk returned inserted:{inserted}, expected {len(bulk_items)}"
+        
+        log(f"   ✓ Bulk insert returned inserted:{inserted}")
+    except Exception as e:
+        return False, f"POST /{path}/bulk exception: {e}"
+    
+    # Verify count increased
+    try:
+        resp = requests.get(f"{BASE_URL}/{path}", headers=get_headers(), timeout=10)
+        items = resp.json()
+        new_count = len(items)
+        expected_count = initial_count + len(bulk_items)
+        if new_count != expected_count:
+            return False, f"GET /{path} after bulk: expected {expected_count}, got {new_count}"
+        
+        log(f"   ✓ GET /{path} now has {new_count} items (+{len(bulk_items)})")
+        
+        # Clean up - delete the bulk inserted items
+        log(f"Cleaning up {len(bulk_items)} bulk items...")
+        for item in items[-len(bulk_items):]:
+            requests.delete(f"{BASE_URL}/{path}/{item['id']}", headers=get_headers(), timeout=10)
+        
+        log(f"   ✓ Cleanup complete")
+    except Exception as e:
+        return False, f"GET /{path} after bulk exception: {e}"
+    
+    log(f"✅ {path}/bulk - BULK TEST PASSED")
+    return True, None
+
+def test_validation(path):
+    """Test validation - empty name should return 400"""
+    log(f"\n{'='*60}")
+    log(f"Testing VALIDATION: {path}")
+    log(f"{'='*60}")
+    
+    log(f"POST /{path} with empty name")
+    try:
+        resp = requests.post(f"{BASE_URL}/{path}", json={"name": ""}, headers=get_headers(), timeout=10)
+        if resp.status_code != 400:
+            return False, f"POST /{path} with empty name returned {resp.status_code}, expected 400"
+        
+        log(f"   ✓ Empty name correctly returns 400")
+    except Exception as e:
+        return False, f"Validation test exception: {e}"
+    
+    log(f"✅ {path} - VALIDATION TEST PASSED")
+    return True, None
+
+def test_auth_required(path):
+    """Test that endpoint requires authentication"""
+    log(f"\n{'='*60}")
+    log(f"Testing AUTH REQUIRED: {path}")
+    log(f"{'='*60}")
+    
+    log(f"GET /{path} without Bearer token")
+    try:
+        resp = requests.get(f"{BASE_URL}/{path}", timeout=10)
+        if resp.status_code not in [401, 403]:
+            return False, f"GET /{path} without token returned {resp.status_code}, expected 401/403"
+        
+        log(f"   ✓ No token correctly returns {resp.status_code}")
+    except Exception as e:
+        return False, f"Auth test exception: {e}"
+    
+    log(f"✅ {path} - AUTH TEST PASSED")
+    return True, None
+
+def main():
+    """Main test runner"""
+    log("="*60)
+    log("HireMe Admin Backend - NEW Master Endpoints Test")
+    log("="*60)
+    
+    # Login first
+    if not login():
+        log("Login failed, cannot proceed", "ERROR")
+        sys.exit(1)
+    
+    results = []
+    
+    # Test 1: Languages
+    success, error = test_master_crud(
+        "languages",
+        {"name": "English", "status": True},
+        {"status": False}
+    )
+    results.append(("languages CRUD", success, error))
+    
+    # Test 2: Currencies (with code & symbol)
+    success, error = test_master_crud(
+        "currencies",
+        {"name": "Indian Rupee", "code": "INR", "symbol": "₹", "status": True},
+        {"status": False}
+    )
+    results.append(("currencies CRUD", success, error))
+    
+    # Test 3: Email Templates (with all fields)
+    success, error = test_master_crud(
+        "email-templates",
+        {
+            "name": "Welcome Email",
+            "key": "welcome",
+            "subject": "Welcome!",
+            "recipient": "Candidate",
+            "dispatch": True,
+            "body": "<p>Hi</p>",
+            "status": True
+        },
+        {"dispatch": False}
+    )
+    results.append(("email-templates CRUD", success, error))
+    
+    # Test 4: Company FAQs (with answer)
+    success, error = test_master_crud(
+        "company-faqs",
+        {"name": "What is HireMe?", "answer": "A job portal", "status": True},
+        {"status": False}
+    )
+    results.append(("company-faqs CRUD", success, error))
+    
+    # Test 5: Function Roles (with category)
+    success, error = test_master_crud(
+        "function-roles",
+        {"name": "Backend Engineer", "category": "Software", "status": True},
+        {"status": False}
+    )
+    results.append(("function-roles CRUD", success, error))
+    
+    # Test 6-17: Simple masters (name + status only)
+    simple_masters = [
+        "perk-benefits",
+        "notice-periods",
+        "company-types",
+        "company-sizes",
+        "company-subscriptions",
+        "candidate-faqs",
+        "job-types",
+        "function-role-categories",
+        "experience-levels",
+        "workplace-types",
+        "salary-options",
+        "perk-benefit-categories"
+    ]
+    
+    for master in simple_masters:
+        # For perk-benefits and candidate-faqs, add required fields
+        if master == "perk-benefits":
+            create_payload = {"name": "Test Perk", "category": "Health", "status": True}
+        elif master == "candidate-faqs":
+            create_payload = {"name": "Test FAQ", "answer": "Test answer", "status": True}
         else:
-            log_test("Login with wrong password returns 401", False, 
-                    f"Expected 401, got {response.status_code}")
-    except Exception as e:
-        log_test("Login with wrong password returns 401", False, f"Exception: {str(e)}")
-
-
-def test_3_auth_me_with_token():
-    """Test 3: GET /api/auth/me with Bearer token"""
-    if not auth_token:
-        log_test("GET /auth/me with token", False, "No auth token available")
-        return
-    
-    try:
-        response = requests.get(
-            f"{BASE_URL}/auth/me",
-            headers=get_headers(with_auth=True)
+            create_payload = {"name": "Test Item", "status": True}
+        
+        success, error = test_master_crud(
+            master,
+            create_payload,
+            {"status": False}
         )
-        
-        if response.status_code != 200:
-            log_test("GET /auth/me with token", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        user = response.json()
-        if user.get("name") and user.get("email") and user.get("role"):
-            log_test("GET /auth/me with token", True, 
-                    f"User: {user['name']} ({user['role']})")
-        else:
-            log_test("GET /auth/me with token", False, f"Invalid user data: {user}")
-            
-    except Exception as e:
-        log_test("GET /auth/me with token", False, f"Exception: {str(e)}")
-
-
-def test_4_auth_me_without_token():
-    """Test 4: GET /api/auth/me without token (should fail)"""
-    try:
-        response = requests.get(
-            f"{BASE_URL}/auth/me",
-            headers=get_headers(with_auth=False)
-        )
-        
-        if response.status_code in [401, 403]:
-            log_test("GET /auth/me without token returns 401/403", True)
-        else:
-            log_test("GET /auth/me without token returns 401/403", False, 
-                    f"Expected 401/403, got {response.status_code}")
-    except Exception as e:
-        log_test("GET /auth/me without token returns 401/403", False, f"Exception: {str(e)}")
-
-
-# ============ EDUCATION CATEGORIES TESTS ============
-
-created_category_id: Optional[str] = None
-
-
-def test_5_get_categories():
-    """Test 5: GET /api/education-categories returns seeded list"""
-    if not auth_token:
-        log_test("GET /education-categories", False, "No auth token")
-        return
+        results.append((f"{master} CRUD", success, error))
     
-    try:
-        response = requests.get(
-            f"{BASE_URL}/education-categories",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("GET /education-categories", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        categories = response.json()
-        
-        if not isinstance(categories, list):
-            log_test("GET /education-categories", False, "Response is not a list")
-            return
-        
-        if len(categories) < 13:
-            log_test("GET /education-categories", False, 
-                    f"Expected ~13 seeded items, got {len(categories)}")
-            return
-        
-        log_test("GET /education-categories", True, 
-                f"Retrieved {len(categories)} categories")
-        
-    except Exception as e:
-        log_test("GET /education-categories", False, f"Exception: {str(e)}")
-
-
-def test_6_create_category():
-    """Test 6: POST /api/education-categories creates new category"""
-    global created_category_id
-    
-    if not auth_token:
-        log_test("POST /education-categories", False, "No auth token")
-        return
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/education-categories",
-            json={"name": "Test Category", "status": True, "trending": False},
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("POST /education-categories", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        category = response.json()
-        
-        # Validate response
-        if not category.get("id"):
-            log_test("POST /education-categories", False, "Missing 'id' in response")
-            return
-        
-        if category.get("name") != "Test Category":
-            log_test("POST /education-categories", False, 
-                    f"Expected name='Test Category', got '{category.get('name')}'")
-            return
-        
-        if category.get("updatedBy") != "Komal Saini":
-            log_test("POST /education-categories", False, 
-                    f"Expected updatedBy='Komal Saini', got '{category.get('updatedBy')}'")
-            return
-        
-        if not category.get("updatedAt"):
-            log_test("POST /education-categories", False, "Missing 'updatedAt'")
-            return
-        
-        created_category_id = category["id"]
-        log_test("POST /education-categories", True, 
-                f"Created category with id: {created_category_id}")
-        
-    except Exception as e:
-        log_test("POST /education-categories", False, f"Exception: {str(e)}")
-
-
-def test_7_update_category_trending():
-    """Test 7: PUT /api/education-categories/{id} toggle trending"""
-    if not auth_token:
-        log_test("PUT /education-categories (trending)", False, "No auth token")
-        return
-    
-    if not created_category_id:
-        log_test("PUT /education-categories (trending)", False, "No category id available")
-        return
-    
-    try:
-        response = requests.put(
-            f"{BASE_URL}/education-categories/{created_category_id}",
-            json={"trending": True},
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("PUT /education-categories (trending)", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        category = response.json()
-        
-        if category.get("trending") != True:
-            log_test("PUT /education-categories (trending)", False, 
-                    f"Expected trending=True, got {category.get('trending')}")
-            return
-        
-        log_test("PUT /education-categories (trending)", True, "Trending toggled successfully")
-        
-    except Exception as e:
-        log_test("PUT /education-categories (trending)", False, f"Exception: {str(e)}")
-
-
-def test_8_update_category_status():
-    """Test 8: PUT /api/education-categories/{id} toggle status"""
-    if not auth_token:
-        log_test("PUT /education-categories (status)", False, "No auth token")
-        return
-    
-    if not created_category_id:
-        log_test("PUT /education-categories (status)", False, "No category id available")
-        return
-    
-    try:
-        response = requests.put(
-            f"{BASE_URL}/education-categories/{created_category_id}",
-            json={"status": False},
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("PUT /education-categories (status)", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        category = response.json()
-        
-        if category.get("status") != False:
-            log_test("PUT /education-categories (status)", False, 
-                    f"Expected status=False, got {category.get('status')}")
-            return
-        
-        log_test("PUT /education-categories (status)", True, "Status toggled successfully")
-        
-    except Exception as e:
-        log_test("PUT /education-categories (status)", False, f"Exception: {str(e)}")
-
-
-def test_9_update_nonexistent_category():
-    """Test 9: PUT /api/education-categories/{id} with non-existent id returns 404"""
-    if not auth_token:
-        log_test("PUT /education-categories (non-existent)", False, "No auth token")
-        return
-    
-    try:
-        response = requests.put(
-            f"{BASE_URL}/education-categories/nonexistent-id-12345",
-            json={"status": True},
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code == 404:
-            log_test("PUT /education-categories (non-existent) returns 404", True)
-        else:
-            log_test("PUT /education-categories (non-existent) returns 404", False, 
-                    f"Expected 404, got {response.status_code}")
-    except Exception as e:
-        log_test("PUT /education-categories (non-existent) returns 404", False, f"Exception: {str(e)}")
-
-
-def test_10_delete_category():
-    """Test 10: DELETE /api/education-categories/{id} removes category"""
-    if not auth_token:
-        log_test("DELETE /education-categories", False, "No auth token")
-        return
-    
-    if not created_category_id:
-        log_test("DELETE /education-categories", False, "No category id available")
-        return
-    
-    try:
-        # Delete the category
-        response = requests.delete(
-            f"{BASE_URL}/education-categories/{created_category_id}",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("DELETE /education-categories", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        result = response.json()
-        if result.get("success") != True:
-            log_test("DELETE /education-categories", False, 
-                    f"Expected success=True, got {result}")
-            return
-        
-        # Verify it's deleted by trying to GET all categories
-        get_response = requests.get(
-            f"{BASE_URL}/education-categories",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if get_response.status_code == 200:
-            categories = get_response.json()
-            if any(cat.get("id") == created_category_id for cat in categories):
-                log_test("DELETE /education-categories", False, 
-                        "Category still exists after deletion")
-                return
-        
-        log_test("DELETE /education-categories", True, "Category deleted successfully")
-        
-    except Exception as e:
-        log_test("DELETE /education-categories", False, f"Exception: {str(e)}")
-
-
-def test_11_delete_nonexistent_category():
-    """Test 11: DELETE /api/education-categories/{id} with non-existent id returns 404"""
-    if not auth_token:
-        log_test("DELETE /education-categories (non-existent)", False, "No auth token")
-        return
-    
-    try:
-        response = requests.delete(
-            f"{BASE_URL}/education-categories/nonexistent-id-12345",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code == 404:
-            log_test("DELETE /education-categories (non-existent) returns 404", True)
-        else:
-            log_test("DELETE /education-categories (non-existent) returns 404", False, 
-                    f"Expected 404, got {response.status_code}")
-    except Exception as e:
-        log_test("DELETE /education-categories (non-existent) returns 404", False, f"Exception: {str(e)}")
-
-
-# ============ EDUCATION SUB CATEGORIES TESTS ============
-
-created_subcategory_id: Optional[str] = None
-
-
-def test_12_get_subcategories():
-    """Test 12: GET /api/education-sub-categories returns seeded list"""
-    if not auth_token:
-        log_test("GET /education-sub-categories", False, "No auth token")
-        return
-    
-    try:
-        response = requests.get(
-            f"{BASE_URL}/education-sub-categories",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("GET /education-sub-categories", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        subcategories = response.json()
-        
-        if not isinstance(subcategories, list):
-            log_test("GET /education-sub-categories", False, "Response is not a list")
-            return
-        
-        if len(subcategories) < 7:
-            log_test("GET /education-sub-categories", False, 
-                    f"Expected ~7 seeded items, got {len(subcategories)}")
-            return
-        
-        # Check structure
-        if subcategories:
-            first = subcategories[0]
-            if not all(k in first for k in ["name", "category", "status"]):
-                log_test("GET /education-sub-categories", False, 
-                        f"Missing required fields in response: {first}")
-                return
-        
-        log_test("GET /education-sub-categories", True, 
-                f"Retrieved {len(subcategories)} sub-categories")
-        
-    except Exception as e:
-        log_test("GET /education-sub-categories", False, f"Exception: {str(e)}")
-
-
-def test_13_create_subcategory():
-    """Test 13: POST /api/education-sub-categories creates new sub-category"""
-    global created_subcategory_id
-    
-    if not auth_token:
-        log_test("POST /education-sub-categories", False, "No auth token")
-        return
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/education-sub-categories",
-            json={"name": "Test Sub", "category": "Bachelor Of Engineering", "status": True},
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("POST /education-sub-categories", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        subcategory = response.json()
-        
-        # Validate response
-        if not subcategory.get("id"):
-            log_test("POST /education-sub-categories", False, "Missing 'id' in response")
-            return
-        
-        if subcategory.get("name") != "Test Sub":
-            log_test("POST /education-sub-categories", False, 
-                    f"Expected name='Test Sub', got '{subcategory.get('name')}'")
-            return
-        
-        if subcategory.get("category") != "Bachelor Of Engineering":
-            log_test("POST /education-sub-categories", False, 
-                    f"Expected category='Bachelor Of Engineering', got '{subcategory.get('category')}'")
-            return
-        
-        created_subcategory_id = subcategory["id"]
-        log_test("POST /education-sub-categories", True, 
-                f"Created sub-category with id: {created_subcategory_id}")
-        
-    except Exception as e:
-        log_test("POST /education-sub-categories", False, f"Exception: {str(e)}")
-
-
-def test_14_update_subcategory_status():
-    """Test 14: PUT /api/education-sub-categories/{id} toggle status"""
-    if not auth_token:
-        log_test("PUT /education-sub-categories (status)", False, "No auth token")
-        return
-    
-    if not created_subcategory_id:
-        log_test("PUT /education-sub-categories (status)", False, "No sub-category id available")
-        return
-    
-    try:
-        response = requests.put(
-            f"{BASE_URL}/education-sub-categories/{created_subcategory_id}",
-            json={"status": False},
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("PUT /education-sub-categories (status)", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        subcategory = response.json()
-        
-        if subcategory.get("status") != False:
-            log_test("PUT /education-sub-categories (status)", False, 
-                    f"Expected status=False, got {subcategory.get('status')}")
-            return
-        
-        log_test("PUT /education-sub-categories (status)", True, "Status toggled successfully")
-        
-    except Exception as e:
-        log_test("PUT /education-sub-categories (status)", False, f"Exception: {str(e)}")
-
-
-def test_15_delete_subcategory():
-    """Test 15: DELETE /api/education-sub-categories/{id} removes sub-category"""
-    if not auth_token:
-        log_test("DELETE /education-sub-categories", False, "No auth token")
-        return
-    
-    if not created_subcategory_id:
-        log_test("DELETE /education-sub-categories", False, "No sub-category id available")
-        return
-    
-    try:
-        response = requests.delete(
-            f"{BASE_URL}/education-sub-categories/{created_subcategory_id}",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("DELETE /education-sub-categories", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        result = response.json()
-        if result.get("success") != True:
-            log_test("DELETE /education-sub-categories", False, 
-                    f"Expected success=True, got {result}")
-            return
-        
-        log_test("DELETE /education-sub-categories", True, "Sub-category deleted successfully")
-        
-    except Exception as e:
-        log_test("DELETE /education-sub-categories", False, f"Exception: {str(e)}")
-
-
-# ============ DASHBOARD TESTS ============
-
-def test_16_dashboard():
-    """Test 16: GET /api/dashboard returns complete dashboard data"""
-    if not auth_token:
-        log_test("GET /dashboard", False, "No auth token")
-        return
-    
-    try:
-        response = requests.get(
-            f"{BASE_URL}/dashboard",
-            headers=get_headers(with_auth=True)
-        )
-        
-        if response.status_code != 200:
-            log_test("GET /dashboard", False, 
-                    f"Expected 200, got {response.status_code}. Response: {response.text}")
-            return
-        
-        dashboard = response.json()
-        
-        # Check required keys
-        required_keys = [
-            "stats", "jobsCreatedMonthly", "jobsByIndustry", 
-            "candidatesMonthly", "recentCompanies", "recentJobs", "totalCategories"
+    # Test 18: Bulk endpoint on languages
+    success, error = test_bulk_endpoint(
+        "languages",
+        [
+            {"name": "Hindi"},
+            {"name": "Tamil"},
+            {"name": "Telugu"}
         ]
-        
-        missing_keys = [k for k in required_keys if k not in dashboard]
-        if missing_keys:
-            log_test("GET /dashboard", False, 
-                    f"Missing required keys: {missing_keys}")
-            return
-        
-        # Validate stats array
-        stats = dashboard.get("stats", [])
-        if not isinstance(stats, list) or len(stats) != 4:
-            log_test("GET /dashboard", False, 
-                    f"Expected stats to be array of 4 items, got {len(stats)}")
-            return
-        
-        log_test("GET /dashboard", True, 
-                f"Dashboard data retrieved with all required keys")
-        
-    except Exception as e:
-        log_test("GET /dashboard", False, f"Exception: {str(e)}")
-
-
-# ============ MAIN TEST RUNNER ============
-
-def run_all_tests():
-    """Run all backend tests in sequence"""
-    print("\n" + "="*70)
-    print("HireMe Admin Backend API Tests")
-    print("="*70 + "\n")
+    )
+    results.append(("languages bulk", success, error))
     
-    print(f"Base URL: {BASE_URL}\n")
+    # Test 19: Bulk endpoint on education-categories
+    success, error = test_bulk_endpoint(
+        "education-categories",
+        [
+            {"name": "MBA", "trending": True},
+            {"name": "MCA"}
+        ]
+    )
+    results.append(("education-categories bulk", success, error))
     
-    # Auth tests
-    print("\n--- AUTHENTICATION TESTS ---\n")
-    test_1_login_success()
-    test_2_login_wrong_password()
-    test_3_auth_me_with_token()
-    test_4_auth_me_without_token()
+    # Test 20: Validation on currencies
+    success, error = test_validation("currencies")
+    results.append(("currencies validation", success, error))
     
-    # Education Categories tests
-    print("\n--- EDUCATION CATEGORIES TESTS ---\n")
-    test_5_get_categories()
-    test_6_create_category()
-    test_7_update_category_trending()
-    test_8_update_category_status()
-    test_9_update_nonexistent_category()
-    test_10_delete_category()
-    test_11_delete_nonexistent_category()
+    # Test 21: Auth required on languages
+    success, error = test_auth_required("languages")
+    results.append(("languages auth", success, error))
     
-    # Education Sub Categories tests
-    print("\n--- EDUCATION SUB CATEGORIES TESTS ---\n")
-    test_12_get_subcategories()
-    test_13_create_subcategory()
-    test_14_update_subcategory_status()
-    test_15_delete_subcategory()
+    # Print summary
+    log("\n" + "="*60)
+    log("TEST SUMMARY")
+    log("="*60)
     
-    # Dashboard tests
-    print("\n--- DASHBOARD TESTS ---\n")
-    test_16_dashboard()
+    passed = 0
+    failed = 0
     
-    # Summary
-    print("\n" + "="*70)
-    print("TEST SUMMARY")
-    print("="*70)
-    print(f"Total Tests: {test_results['total']}")
-    print(f"Passed: {len(test_results['passed'])} ✅")
-    print(f"Failed: {len(test_results['failed'])} ❌")
+    for test_name, success, error in results:
+        if success:
+            log(f"✅ {test_name}", "PASS")
+            passed += 1
+        else:
+            log(f"❌ {test_name}: {error}", "FAIL")
+            failed += 1
     
-    if test_results['failed']:
-        print("\nFailed Tests:")
-        for test in test_results['failed']:
-            print(f"  - {test}")
+    log("="*60)
+    log(f"Total: {len(results)} | Passed: {passed} | Failed: {failed}")
+    log("="*60)
     
-    print("="*70 + "\n")
-    
-    # Exit with appropriate code
-    sys.exit(0 if len(test_results['failed']) == 0 else 1)
-
+    if failed > 0:
+        sys.exit(1)
+    else:
+        log("ALL TESTS PASSED! 🎉", "SUCCESS")
+        sys.exit(0)
 
 if __name__ == "__main__":
-    run_all_tests()
+    main()

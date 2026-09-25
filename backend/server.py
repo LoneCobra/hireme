@@ -265,12 +265,53 @@ def register_master(path: str, collection: str, allowed: list):
             raise HTTPException(status_code=404, detail='Item not found')
         return {'success': True}
 
+    @api_router.post(f'/{path}/bulk', name=f'bulk_{coll}')
+    async def _bulk(payload: dict, user=Depends(get_current_user)):
+        items = payload.get('items') or []
+        docs = []
+        for it in items:
+            if not str(it.get('name', '')).strip():
+                continue
+            doc = {'id': str(uuid.uuid4())}
+            for f in allowed:
+                if f in it:
+                    doc[f] = it[f]
+            doc['name'] = str(doc.get('name', '')).strip()
+            doc.setdefault('status', True)
+            doc['updatedBy'] = user['name']
+            doc['updatedAt'] = now_display()
+            doc['created_at'] = datetime.utcnow().isoformat()
+            docs.append(doc)
+        if docs:
+            await db[coll].insert_many(docs)
+        return {'inserted': len(docs)}
 
-register_master('states', 'states', ['name', 'status'])
+
+_SIMPLE = ['name', 'status']
+register_master('states', 'states', _SIMPLE)
 register_master('cities', 'cities', ['name', 'state', 'image', 'trending', 'status'])
-register_master('industries', 'industries', ['name', 'status'])
+register_master('industries', 'industries', _SIMPLE)
 register_master('sub-industries', 'sub_industries', ['name', 'industry', 'status'])
-register_master('skills', 'skills', ['name', 'status'])
+register_master('skills', 'skills', _SIMPLE)
+register_master('education-categories', 'education_categories', ['name', 'trending', 'status'])
+register_master('education-sub-categories', 'education_sub_categories', ['name', 'category', 'status'])
+register_master('perk-benefit-categories', 'perk_benefit_categories', _SIMPLE)
+register_master('perk-benefits', 'perk_benefits', ['name', 'category', 'status'])
+register_master('languages', 'languages', _SIMPLE)
+register_master('currencies', 'currencies', ['name', 'code', 'symbol', 'status'])
+register_master('notice-periods', 'notice_periods', _SIMPLE)
+register_master('company-types', 'company_types', _SIMPLE)
+register_master('company-sizes', 'company_sizes', _SIMPLE)
+register_master('company-subscriptions', 'company_subscriptions', _SIMPLE)
+register_master('company-faqs', 'company_faqs', ['name', 'answer', 'status'])
+register_master('candidate-faqs', 'candidate_faqs', ['name', 'answer', 'status'])
+register_master('job-types', 'job_types', _SIMPLE)
+register_master('function-role-categories', 'function_role_categories', _SIMPLE)
+register_master('function-roles', 'function_roles', ['name', 'category', 'status'])
+register_master('experience-levels', 'experience_levels', _SIMPLE)
+register_master('workplace-types', 'workplace_types', _SIMPLE)
+register_master('salary-options', 'salary_options', _SIMPLE)
+register_master('email-templates', 'email_templates', ['name', 'key', 'subject', 'body', 'recipient', 'dispatch', 'status'])
 
 
 # ---------------- Public (homepage) ----------------
