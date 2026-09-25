@@ -106,9 +106,9 @@ export default function Home() {
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-6">
           {cities.map((c) => (
             <button key={c.name} className="group flex flex-col items-center text-center">
-              <div className="h-[92px] w-[92px] rounded-full flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform"
+              <div className="h-[92px] w-[92px] rounded-full overflow-hidden group-hover:-translate-y-1 transition-transform"
                 style={{ background: "radial-gradient(circle at 50% 30%, #23237a, #0c0c2b)" }}>
-                <img src={c.image} alt={c.name} className="h-[70px] w-[70px] object-contain" />
+                <img src={c.image} alt={c.name} className="h-full w-full object-cover" />
               </div>
               <p className="mt-3 font-semibold text-[#10112b] text-[15px] leading-tight">{c.name}</p>
               <p className="text-gray-400 text-[13px] group-hover:text-[#2c0eee] transition-colors">Explore jobs</p>
