@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Database, ChevronDown, Menu, Search, Bell, LogOut,
+  LayoutDashboard, Database, ChevronDown, Menu, Search, Bell, LogOut, Building2,
 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { MASTERS, MASTER_GROUPS } from "./mastersConfig";
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Company", to: "/admin/companies", icon: Building2 },
 ];
 
 export default function AdminLayout({ title, children }) {

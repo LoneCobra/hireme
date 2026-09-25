@@ -873,6 +873,126 @@ backend:
         agent: "testing"
         comment: "GET /api/languages without Bearer token correctly returns 403 Forbidden. All new master endpoints require authentication and return 401/403 without token."
 
+  - task: "Companies - GET list"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/companies returns 200 with array. Initially empty, correctly returns list of companies."
+
+  - task: "Companies - POST create with full data"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/companies with full Maxgen Technologies data (name, slug, website, foundedYear, gst, about, industry, subIndustry, companySize, logo, banner, status='active', trending=true) returns created object with id. ALL fields persist correctly including slug, website, foundedYear, gst, about, industry, subIndustry, companySize, status, trending. updatedBy='Komal Saini' and updatedAt are set correctly."
+
+  - task: "Companies - GET by ID"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/companies/{id} returns correct company object with all fields."
+
+  - task: "Companies - PUT update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PUT /api/companies/{id} with {status:'blocked', trending:false} successfully updates fields and returns updated object with status='blocked' and trending=false."
+
+  - task: "Companies - POST with minimal data (defaults)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/companies with only {name:'Acme'} correctly defaults status='pending' and trending=false. Default values working as expected."
+
+  - task: "Companies - DELETE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /api/companies/{id} returns {success:true}. GET request confirms company is removed from list. Deletion working correctly."
+
+  - task: "Companies - Authentication Required"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET/POST/PUT/DELETE /api/companies without Bearer token correctly return 403 Forbidden. All endpoints properly secured."
+
+  - task: "Companies - Validation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /api/companies with empty name correctly returns 400 Bad Request. Validation working correctly."
+
+  - task: "Companies - 404 handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET/PUT/DELETE /api/companies/{nonexistent-id} correctly return 404 Not Found. Error handling working correctly."
+
+  - task: "Dashboard - ACTIVE COMPANIES stat"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/dashboard returns stats array with 'ACTIVE COMPANIES' entry. The value correctly reflects the count of companies with status='active'. Dashboard integration working correctly."
+
 frontend:
   - task: "Master Tables - Infinite Re-fetch Loop Bug Fix (Cities)"
     implemented: true
@@ -1008,13 +1128,13 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.4"
-  test_sequence: 5
-  run_ui: true
+  version: "1.5"
+  test_sequence: 6
+  run_ui: false
 
 test_plan:
   current_focus:
-    - "Sample Format CSV download and Bulk Upload flow verification completed"
+    - "Companies endpoints testing completed"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -1030,3 +1150,5 @@ agent_communication:
     message: "FRONTEND BUG FIX VERIFICATION COMPLETED - Master Tables Infinite Loop Issue. Tested all 4 master pages (cities with 4953 records, states with 36 records, languages empty, skills empty) as requested. RESULTS: ✅ NO infinite loop detected on any master page. ✅ Each page makes exactly 1 API call per visit (2 calls observed due to React.StrictMode in development, which is expected behavior and will be 1 in production). ✅ Stat cards show stable values with no flickering. ✅ CRITICAL REGRESSION TEST PASSED: Switching between masters (cities -> languages, cities -> states -> skills -> languages) shows correct data for each master with NO stale data persisting and NO background API calls to previous masters. ✅ The bug fix implementation using useCallback with [key] dependency and useEffect with [key, load] dependency is working correctly. The reported 'fluctuating' issue has been successfully resolved. All 6 test scenarios PASSED."
   - agent: "testing"
     message: "CSV SAMPLE FORMAT & BULK UPLOAD FLOW VERIFICATION COMPLETED. Tested all 4 scenarios as requested: ✅ TEST 1 (Simple master sample): languages-sample.csv downloads with header 'name,status' and 2 data rows. ✅ TEST 2 (Parent-linked master sample): sub-industries-sample.csv downloads with header 'name,industry,status' and industry column contains EXISTING industry name 'Software' (fetched from API). Toast correctly instructs about parent column requirement. ✅ TEST 3 (Bulk upload with boolean conversion): Uploaded Hindi/Tamil (true) and Telugu (false). CRITICAL TEST PASSED: Telugu shows as Inactive (string 'false' correctly converted to boolean false). Stats: TOTAL:3, ACTIVE:2, INACTIVE:1. ✅ TEST 4 (Parent-linked bulk upload): Uploaded Web Development and Mobile Apps linked to Software industry. Both appear with correct parent reference. All 4 tests PASSED. No issues found."
+  - agent: "testing"
+    message: "COMPANIES ENDPOINTS TESTING COMPLETED. All 11 tests passed successfully. Tested: (1) GET /api/companies returns 200 with array. (2) POST /api/companies with full Maxgen Technologies data - ALL fields persist correctly (name, slug, website, foundedYear, gst, about, industry, subIndustry, companySize, logo, banner, status='active', trending=true), updatedBy='Komal Saini' and updatedAt set correctly. (3) GET /api/companies/{id} returns correct company. (4) PUT /api/companies/{id} updates status='blocked' and trending=false correctly. (5) POST /api/companies with only name='Acme' correctly defaults status='pending' and trending=false. (6) GET /api/companies confirms both companies present. (7) DELETE /api/companies/{id} returns {success:true} and removes company. (8) All endpoints (GET/POST/PUT/DELETE) without Bearer token correctly return 403. (9) POST with empty name correctly returns 400. (10) GET/PUT/DELETE with non-existent ID correctly return 404. (11) GET /api/dashboard 'ACTIVE COMPANIES' stat correctly reflects count of companies with status='active'. All CRUD operations working correctly. Field persistence verified. Default values working. Authentication enforced. Validation working. Error handling correct. Dashboard integration working. No issues found."
