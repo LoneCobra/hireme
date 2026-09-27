@@ -1138,15 +1138,27 @@ frontend:
         agent: "testing"
         comment: "FOCUS BUG FIX VERIFIED - ALL TESTS PASSED. Tested complete Add Company flow: (1) Login with admin@hireme.in/admin123 → redirected to /admin/dashboard. (2) Navigated to /admin/companies/new. (3) CRITICAL TEST - Company Name: Typed full string 'Maxgen Technologies Pvt Ltd' - PASS, full value retained, focus NOT lost. (4) Slug auto-filled correctly: 'maxgen-technologies-pvt-ltd'. (5) CRITICAL TEST - Founded Year: Typed '2015' - PASS, full value retained, focus NOT lost (user specifically called out this field). (6) CRITICAL TEST - GST Number: Typed '22AAAAA0000A1Z5' - PASS, full value retained, focus NOT lost. (7) CRITICAL TEST - About Company: Typed 'We build great software products.' - PASS, full value retained, focus NOT lost. (8) Switched to Status & Flags tab, selected Active status, toggled Trending ON. (9) Clicked Create Company → success toast, redirected to /admin/companies. (10) New company 'Maxgen Technologies Pvt Ltd' appears in list with Active status and Trending enabled. NO console errors detected. The root cause (component defined inside render) has been successfully fixed. All text inputs retain focus throughout multi-character typing."
 
+  - task: "Direct Navigation to /admin/login (SPA Routing Issue)"
+    implemented: true
+    working: false
+    file: "Infrastructure - Kubernetes Ingress Configuration"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "🚨 CRITICAL INFRASTRUCTURE ISSUE - USER REPORT CONFIRMED. Direct navigation to /admin/login returns 404 'Not Found'. Tested: (1) Fresh browser context → https://backend.hiremejobs.co.in/admin/login → 404 'Not Found'. (2) Hard reload (F5) on /admin/login → continues to show 404. (3) Root path https://backend.hiremejobs.co.in/ → ALSO returns 404. (4) BUT http://localhost:3000/admin/login → ✅ WORKS PERFECTLY with full login page rendering correctly. DIAGNOSIS: The React app code is working correctly (verified on localhost:3000). This is a Kubernetes ingress configuration issue. The ingress is not properly routing requests to the frontend service and is not configured to handle SPA routing (should serve index.html for all routes). Console logs show: 'Failed to load resource: the server responded with a status of 404 (Not Found)'. IMPACT: Users cannot access the app via direct URL navigation or page refresh on any route. This is OUTSIDE the scope of application code fixes and requires infrastructure-level configuration changes to the Kubernetes ingress."
+
 metadata:
   created_by: "testing_agent"
-  version: "1.6"
-  test_sequence: 7
+  version: "1.7"
+  test_sequence: 8
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Add Company Form focus bug fix verified and working"
+    - "Direct Navigation to /admin/login - CRITICAL INFRASTRUCTURE ISSUE"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -1166,3 +1178,5 @@ agent_communication:
     message: "COMPANIES ENDPOINTS TESTING COMPLETED. All 11 tests passed successfully. Tested: (1) GET /api/companies returns 200 with array. (2) POST /api/companies with full Maxgen Technologies data - ALL fields persist correctly (name, slug, website, foundedYear, gst, about, industry, subIndustry, companySize, logo, banner, status='active', trending=true), updatedBy='Komal Saini' and updatedAt set correctly. (3) GET /api/companies/{id} returns correct company. (4) PUT /api/companies/{id} updates status='blocked' and trending=false correctly. (5) POST /api/companies with only name='Acme' correctly defaults status='pending' and trending=false. (6) GET /api/companies confirms both companies present. (7) DELETE /api/companies/{id} returns {success:true} and removes company. (8) All endpoints (GET/POST/PUT/DELETE) without Bearer token correctly return 403. (9) POST with empty name correctly returns 400. (10) GET/PUT/DELETE with non-existent ID correctly return 404. (11) GET /api/dashboard 'ACTIVE COMPANIES' stat correctly reflects count of companies with status='active'. All CRUD operations working correctly. Field persistence verified. Default values working. Authentication enforced. Validation working. Error handling correct. Dashboard integration working. No issues found."
   - agent: "testing"
     message: "ADD COMPANY FORM - FOCUS BUG FIX VERIFICATION COMPLETED ✅. Tested complete flow as requested: Login → /admin/companies/new → typed full strings in all fields → Status & Flags tab → Create Company. CRITICAL RESULTS: ✅ Company Name 'Maxgen Technologies Pvt Ltd' - FULL VALUE RETAINED, focus NOT lost. ✅ Founded Year '2015' - FULL VALUE RETAINED, focus NOT lost (user specifically called out this field). ✅ GST Number '22AAAAA0000A1Z5' - FULL VALUE RETAINED, focus NOT lost. ✅ About Company 'We build great software products.' - FULL VALUE RETAINED, focus NOT lost. ✅ Slug auto-filled correctly: 'maxgen-technologies-pvt-ltd'. ✅ Active status selected, Trending toggled ON. ✅ Company created successfully, redirected to /admin/companies. ✅ New company appears in list with Active status and Trending enabled. ✅ NO console errors detected. OVERALL: The focus bug (inputs losing focus after single character) has been SUCCESSFULLY FIXED. Root cause (component defined inside render) resolved. All text inputs retain focus throughout multi-character typing."
+  - agent: "testing"
+    message: "🚨 CRITICAL INFRASTRUCTURE ISSUE IDENTIFIED - Direct Navigation to /admin/login Returns 404. USER REPORT CONFIRMED. Tested direct navigation to /admin/login and hard reload (F5) as requested. FINDINGS: ❌ https://backend.hiremejobs.co.in/admin/login returns 404 'Not Found' on direct navigation. ❌ https://backend.hiremejobs.co.in/ (root path) ALSO returns 404. ❌ Hard reload (F5) on /admin/login continues to show 404. ✅ BUT http://localhost:3000/admin/login WORKS PERFECTLY - full login page renders with all elements (heading, email/password fields, demo credentials). DIAGNOSIS: This is a Kubernetes ingress configuration issue, NOT an application code issue. The React app is working correctly (verified on localhost:3000). The ingress is not properly routing requests to the frontend service and is not configured to handle SPA routing (should serve index.html for all routes). IMPACT: Users cannot access the app via direct URL navigation or page refresh on any route. RECOMMENDATION: This requires infrastructure-level fix - Kubernetes ingress needs to be configured to route all requests to the frontend service and serve index.html as fallback for SPA routing. This is OUTSIDE the scope of application code fixes."
