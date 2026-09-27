@@ -1,0 +1,59 @@
+.rte-wrap {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rte-wrap:focus-within {
+  border-color: #2c0eee;
+  box-shadow: 0 0 0 3px rgba(44, 14, 238, 0.12);
+}
+.rte-wrap .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid #eef0f7;
+  background: #fafbff;
+  padding: 10px 12px;
+}
+.rte-wrap .ql-container.ql-snow {
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+}
+.rte-wrap .ql-editor {
+  min-height: var(--rte-min-h, 200px);
+  line-height: 1.7;
+  color: #1f2430;
+}
+.rte-wrap .ql-editor.ql-blank::before {
+  color: #9aa1b1;
+  font-style: normal;
+  left: 16px;
+}
+.rte-wrap .ql-snow .ql-stroke { stroke: #4b5563; }
+.rte-wrap .ql-snow .ql-fill { fill: #4b5563; }
+.rte-wrap .ql-snow .ql-picker { color: #4b5563; }
+.rte-wrap .ql-snow.ql-toolbar button:hover .ql-stroke,
+.rte-wrap .ql-snow .ql-toolbar button:hover .ql-stroke,
+.rte-wrap .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: #2c0eee;
+}
+.rte-wrap .ql-snow.ql-toolbar button:hover .ql-fill,
+.rte-wrap .ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: #2c0eee;
+}
+.rte-wrap .ql-snow.ql-toolbar button.ql-active,
+.rte-wrap .ql-snow .ql-picker-label.ql-active,
+.rte-wrap .ql-snow.ql-toolbar button:hover {
+  color: #2c0eee;
+}
+
+/* Read-only rendered rich text (previews) */
+.rte-render { line-height: 1.7; color: #374151; font-size: 14px; }
+.rte-render h1 { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; }
+.rte-render h2 { font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0; }
+.rte-render h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0; }
+.rte-render ul { list-style: disc; padding-left: 1.4rem; }
+.rte-render ol { list-style: decimal; padding-left: 1.4rem; }
+.rte-render a { color: #2c0eee; text-decoration: underline; }
+.rte-render blockquote { border-left: 3px solid #2c0eee; padding-left: 12px; color: #6b7280; margin: 0.5rem 0; }
