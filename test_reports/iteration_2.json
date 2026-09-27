@@ -1,0 +1,24 @@
+{
+  "summary": "End-to-end test of new Candidates module + verification of Company logo fix and sidebar-sticky fix. Backend candidate CRUD (17 pytest cases including Auth, Candidates CRUD with GET-after-write persistence, master dropdown feeds) all pass against the preview URL. Frontend: Candidates sidebar nav visible, /admin/candidates list page renders with 4 stat cards + search + status filter + Add Candidate button. 4-step wizard renders preview card + stepper + progress bar. Step-1 gating (empty & invalid-email) shows inline errors and blocks advance; stepper is locked (disabled attr) for future steps until Personal is valid. Step-2 gating on Experience Level works. MultiSelect on Skills opens popover with cmdk items, adds removable chip on select. Step-3 → Step-4 works; ReactQuill editor + toolbar render, typing works. Status buttons + featured switch work. Submit POSTs to /api/candidates and navigates back to /admin/candidates where the new row appears with success toast. Back button + previously-completed-step click via stepper both work. COMPANY FIX: logo box sits on top of banner (overlaps=True, has z-10 wrapper, bannerBottom=262 vs logoTop=226 — logo overlaps the banner as intended). SIDEBAR FIX: left aside has position:sticky, top:0, height=100vh; after scrolling 2000px sidebar remains at viewportTop=0 with full height.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_candidates.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "frontend/.env has REACT_APP_BACKEND_URL=https://backend.hiremejobs.co.in (a stale production backend that returns 404 for /api/candidates). At runtime in the preview deployment, requests actually resolve to https://hire-admin.preview.emergentagent.com/api/... (200 OK), so the app works — but if a production build is ever served from a domain that resolves the env value literally, /api/candidates would 404. Consider verifying/aligning REACT_APP_BACKEND_URL vs the production backend, or ensure the production backend deploy includes the new candidate routes.",
+    "CandidateForm.validateStep() is invoked inside the stepper render loop on every render (same pattern already noted for CompanyForm). Cheap here but couples render to validation.",
+    "STATUS_META in CandidatesList maps only 4 statuses; safe due to fallback to pending, but consider guarding against unknown values from backend.",
+    "In CandidatesList.toggleFeatured, on failure `setRows(rows)` restores the pre-toggle snapshot but the closure captures the pre-optimistic-update `rows`, which is correct — noting for readability."
+  ],
+  "updated_files": ["/app/backend/tests/test_candidates.py"],
+  "success_rate": {"backend": "100% (17/17 pytest)", "frontend": "100% (all 11 acceptance items)"},
+  "test_credentials": "admin@hireme.in / admin123",
+  "seed_data_creation": "Seeded via API for wizard testing: experience-levels ['Mid Level','Senior Level'], skills ['Python','React','Go'], languages ['English','Hindi']. Created candidate 'TEST_Rahul Sharma' during test and deleted via API cleanup at the end.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Base URL for testing: https://hire-admin.preview.emergentagent.com (both frontend and backend routes work here; the .env value backend.hiremejobs.co.in is a stale mirror without /api/candidates). Login button text is 'Sign In' (exact). Wizard testids: candidate-preview-card, candidate-stepper, cstep-personal|professional|education|status, cwizard-next-btn/back-btn/submit-btn, candidate-{name|email|phone|jobtitle|gender|dob|city|state|totalexp|explevel|cursalary|expsalary|notice|education}-{input|select}, candidate-{skills|languages}-multiselect, candidate-about-editor (click .ql-editor descendant to type), cstatus-active|inactive|pending|blocked, candidate-featured-switch, candidate-photo-upload, candidate-resume-upload, add-candidate-btn, candidates-refresh-btn. MultiSelect dropdown items expose [cmdk-item]. Some masters start empty in fresh DB; seed via POST /api/<master> before testing dropdown selections.",
+  "rca_of_the_issue": "N/A — all requested features verified working. Only observation: frontend/.env REACT_APP_BACKEND_URL points to a stale prod backend; preview runtime still resolves to correct backend so no user-visible impact today."
+}
