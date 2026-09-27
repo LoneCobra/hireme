@@ -9,6 +9,8 @@ import MasterPage from "./pages/admin/MasterPage";
 import MasterFormPage from "./pages/admin/MasterFormPage";
 import CompaniesList from "./pages/admin/CompaniesList";
 import CompanyForm from "./pages/admin/CompanyForm";
+import CandidatesList from "./pages/admin/CandidatesList";
+import CandidateForm from "./pages/admin/CandidateForm";
 
 function RequireAuth({ children }) {
   const isAuthed = !!localStorage.getItem("hireme_token");
@@ -26,6 +28,9 @@ function App() {
           <Route path="/admin/companies" element={<RequireAuth><CompaniesList /></RequireAuth>} />
           <Route path="/admin/companies/new" element={<RequireAuth><CompanyForm /></RequireAuth>} />
           <Route path="/admin/companies/:id/edit" element={<RequireAuth><CompanyForm /></RequireAuth>} />
+          <Route path="/admin/candidates" element={<RequireAuth><CandidatesList /></RequireAuth>} />
+          <Route path="/admin/candidates/new" element={<RequireAuth><CandidateForm /></RequireAuth>} />
+          <Route path="/admin/candidates/:id/edit" element={<RequireAuth><CandidateForm /></RequireAuth>} />
           <Route path="/admin/masters/:key" element={<RequireAuth><MasterPage /></RequireAuth>} />
           <Route path="/admin/masters/:key/new" element={<RequireAuth><MasterFormPage /></RequireAuth>} />
           <Route path="/admin/masters/:key/:id/edit" element={<RequireAuth><MasterFormPage /></RequireAuth>} />

@@ -188,7 +188,7 @@ export default function CompanyForm() {
             <div className="h-24 relative" style={{ background: "linear-gradient(120deg,#10112b,#2c0eee)" }}>
               {form.banner && <img src={form.banner} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
             </div>
-            <div className="px-5 pb-5 -mt-9">
+            <div className="px-5 pb-5 -mt-9 relative z-10">
               <div className="h-[72px] w-[72px] rounded-2xl bg-white shadow-md ring-4 ring-white flex items-center justify-center overflow-hidden">
                 {form.logo ? <img src={form.logo} alt="logo" className="h-full w-full object-cover" /> : <span className="font-head font-bold text-xl text-[#2c0eee]">{initials}</span>}
               </div>

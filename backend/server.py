@@ -373,6 +373,70 @@ async def delete_company(cid: str, user=Depends(get_current_user)):
     return {'success': True}
 
 
+# ---------------- Candidates ----------------
+CANDIDATE_FIELDS = [
+    'name', 'email', 'phone', 'gender', 'dob', 'city', 'state', 'photo',
+    'jobTitle', 'totalExperience', 'experienceLevel', 'currentSalary',
+    'expectedSalary', 'noticePeriod', 'educationCategory', 'skills',
+    'languages', 'about', 'resume', 'status', 'featured',
+]
+
+
+@api_router.get('/candidates')
+async def list_candidates(user=Depends(get_current_user)):
+    rows = await db.candidates.find().sort('created_at', -1).to_list(5000)
+    return [clean(r) for r in rows]
+
+
+@api_router.get('/candidates/{cid}')
+async def get_candidate(cid: str, user=Depends(get_current_user)):
+    row = await db.candidates.find_one({'id': cid})
+    if not row:
+        raise HTTPException(status_code=404, detail='Candidate not found')
+    return clean(row)
+
+
+@api_router.post('/candidates')
+async def create_candidate(data: dict, user=Depends(get_current_user)):
+    if not str(data.get('name', '')).strip():
+        raise HTTPException(status_code=400, detail='Candidate name is required')
+    doc = {'id': str(uuid.uuid4())}
+    for f in CANDIDATE_FIELDS:
+        if f in data:
+            doc[f] = data[f]
+    doc['name'] = str(doc.get('name', '')).strip()
+    doc.setdefault('status', 'pending')
+    doc.setdefault('featured', False)
+    doc.setdefault('skills', [])
+    doc.setdefault('languages', [])
+    doc['updatedBy'] = user['name']
+    doc['updatedAt'] = now_display()
+    doc['created_at'] = datetime.utcnow().isoformat()
+    await db.candidates.insert_one(doc)
+    return clean(doc)
+
+
+@api_router.put('/candidates/{cid}')
+async def update_candidate(cid: str, data: dict, user=Depends(get_current_user)):
+    updates = {f: data[f] for f in CANDIDATE_FIELDS if f in data}
+    if 'name' in updates:
+        updates['name'] = str(updates['name']).strip()
+    updates['updatedBy'] = user['name']
+    updates['updatedAt'] = now_display()
+    res = await db.candidates.find_one_and_update({'id': cid}, {'$set': updates}, return_document=True)
+    if not res:
+        raise HTTPException(status_code=404, detail='Candidate not found')
+    return clean(res)
+
+
+@api_router.delete('/candidates/{cid}')
+async def delete_candidate(cid: str, user=Depends(get_current_user)):
+    res = await db.candidates.delete_one({'id': cid})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail='Candidate not found')
+    return {'success': True}
+
+
 # ---------------- Public (homepage) ----------------
 @api_router.get('/public/trending-cities')
 async def trending_cities():

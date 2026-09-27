@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Database, ChevronDown, Menu, Search, Bell, LogOut, Building2,
+  LayoutDashboard, Database, ChevronDown, Menu, Search, Bell, LogOut, Building2, Users,
 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { MASTERS, MASTER_GROUPS } from "./mastersConfig";
@@ -9,6 +9,7 @@ import { MASTERS, MASTER_GROUPS } from "./mastersConfig";
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Company", to: "/admin/companies", icon: Building2 },
+  { label: "Candidates", to: "/admin/candidates", icon: Users },
 ];
 
 export default function AdminLayout({ title, children }) {
@@ -30,7 +31,7 @@ export default function AdminLayout({ title, children }) {
   return (
     <div className="min-h-screen flex bg-[#f6f7fb]">
       {/* Sidebar */}
-      <aside className={`${collapsed ? "w-0 -translate-x-full" : "w-[260px]"} lg:translate-x-0 fixed lg:static z-40 h-screen bg-[#0b0b16] text-gray-300 flex flex-col transition-all duration-300 shrink-0`}>
+      <aside className={`${collapsed ? "w-0 -translate-x-full" : "w-[260px]"} lg:translate-x-0 fixed lg:sticky lg:top-0 z-40 h-screen bg-[#0b0b16] text-gray-300 flex flex-col transition-all duration-300 shrink-0`}>
         <div className="h-[72px] flex items-center px-6 border-b border-white/10">
           <Logo light />
         </div>
