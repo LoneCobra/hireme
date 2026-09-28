@@ -1,43 +1,37 @@
 # HireMe Job Portal — PRD
 
 ## Original Problem Statement
-Job portal like foundit. Started with a superadmin + home page (pixel clone of https://hiremejobs.in/, colors Blue #2c0eee, Red #f61d25). Expanded to 24 masters with bulk CSV upload/download and a dedicated Companies management module.
+Job portal like foundit. Superadmin panel + public pages. Colors Blue #2c0eee, Red #f61d25, Poppins font. 24 masters with bulk CSV, Companies module, Candidates module, and a Recruiter portal.
 
 ## Architecture
 - Frontend: React 19 + Tailwind + Shadcn UI + React Router + Axios. `react-quill-new` for rich text.
-- Backend: FastAPI + Motor (MongoDB) + PyJWT.
-- Superadmin JWT auth (admin@hireme.in / admin123).
-- Config-driven Masters (24 tables) via `mastersConfig.js` + generic `MasterPage/MasterFormPage`.
-- Companies module: dedicated CRUD.
+- Backend: FastAPI + Motor (MongoDB) + PyJWT + passlib (pbkdf2_sha256).
+- Auth surfaces: (1) Superadmin `admin_users` JWT (/api/auth/*); (2) Recruiter/company JWT with `type:recruiter` claim (/api/recruiter/*).
 
 ## Key Files
-- `/app/frontend/src/pages/admin/mastersConfig.js` — master schemas.
-- `/app/frontend/src/pages/admin/MasterPage.jsx` / `MasterFormPage.jsx` — generic engines.
-- `/app/frontend/src/pages/admin/CompanyForm.jsx` — Add/Edit Company **step wizard**.
-- `/app/frontend/src/components/admin/RichTextEditor.jsx` + `rich-text.css` — reusable Quill editor.
-- `/app/backend/server.py` — all backend logic.
+- Admin masters: `frontend/src/pages/admin/mastersConfig.js`, `MasterPage.jsx`, `MasterFormPage.jsx`
+- Companies: `frontend/src/pages/admin/CompaniesList.jsx`, `CompanyForm.jsx` (gated wizard)
+- Candidates: `frontend/src/pages/admin/CandidatesList.jsx`, `CandidateForm.jsx` (gated wizard)
+- Shared: `frontend/src/components/admin/RichTextEditor.jsx`, `MultiSelect.jsx`
+- Recruiter portal: `frontend/src/recruiter/RecruiterLanding.jsx`, `RecruiterSignup.jsx`, `recruiterApi.js`
+- Backend: `backend/server.py`
 
 ## Implemented
-- (Earlier) Home clone, JWT auth, 24 masters + bulk CSV, India cities/states seed, Companies CRUD.
-- **2026-06-27: Add Company page fully redesigned** into a gated 4-step wizard (Overview → Relations → Media → Status). Live preview card, vertical stepper with lock/complete states, top progress bar, Back/Continue nav. Steps cannot be skipped without filling required fields (Overview: Name+About; Relations: Industry+Company Size; Media: Logo). About Company is now a full rich text editor. Tested — 9/9 pass.
-- **2026-06-27: UI fixes + Candidates module.**
-  - Fixed company preview logo overlapping under the banner (added `relative z-10`).
-  - Sidebar is now full-height sticky (`lg:sticky lg:top-0`), stays in view on scroll.
-  - New **Candidates** top-level module: list page (`CandidatesList.jsx`) + gated 4-step add/edit wizard (`CandidateForm.jsx`) mirroring Companies. Steps: Personal (Name+Email+Phone required) → Professional (Experience Level required) → Education & Skills (multi-select skills/languages) → Profile & Status (rich text About, resume/photo base64 upload, status, featured). Backend CRUD at `/api/candidates` (`CANDIDATE_FIELDS` in server.py). Tested — 17/17 backend, 11/11 frontend pass.
+- Home clone, superadmin JWT auth, 24 masters + bulk CSV, India cities/states seed, Companies CRUD.
+- **2026-06/09: Add Company redesigned** as gated 4-step wizard + rich text About. Tested 9/9.
+- **2026-09: UI fixes + Candidates module.** Logo z-index fix, sticky full-height sidebar, Candidates list + gated 4-step wizard (multi-select skills/languages, rich text About, photo/resume base64). Backend `/api/candidates`. Tested 17/17 backend, 11/11 frontend.
+- **2026-09: Recruiter portal.** Public routes `/recruiter` (marketing landing + inline login) and `/recruiter/signup` (Company/Consultant tabs, basic info, company details, address, terms). Original design, HireMe brand, generated images. Backend: `/api/recruiter/signup` (creates company status=pending), `/api/recruiter/login`, `/api/recruiter/me` (Bearer, type:recruiter claim), `/api/public/{industries,sub-industries,states,cities}`. companies.email sparse-unique index. Tested 13/13 backend, 100% frontend.
 
-## New Files (2026-06-27)
-- `/app/frontend/src/components/admin/RichTextEditor.jsx` + `rich-text.css`
-- `/app/frontend/src/components/admin/MultiSelect.jsx`
-- `/app/frontend/src/pages/admin/CandidatesList.jsx`
-- `/app/frontend/src/pages/admin/CandidateForm.jsx`
-
-## IMPORTANT — Production deploy note
-`frontend/.env` REACT_APP_BACKEND_URL = `https://backend.hiremejobs.co.in` (user's own VPS). The Emergent preview works (platform resolves to the preview backend), but the user MUST redeploy the updated `/app/backend/server.py` (candidate routes) to their VPS for Candidates to work in their production.
+## Deployment note
+`frontend/.env` REACT_APP_BACKEND_URL = user's VPS `https://backend.hiremejobs.co.in`. Emergent preview resolves to preview backend. User must redeploy `backend/server.py` and rebuild frontend on their VPS. Recruiter subdomain `recruiter.hiremejobs.co.in`: serve same build via Nginx with `location = / { return 302 /recruiter; }` + SPA `try_files $uri /index.html`.
 
 ## Backlog / Future
-- P1: Lock backend CORS from `["*"]` to a `CORS_ORIGINS` env var (offered, awaiting user go-ahead).
-- P2: Refactor large `server.py` into routers.
-- Render company `about` HTML safely wherever the company profile is displayed (use `.rte-render` class).
+- P1: Recruiter dashboard (post jobs, search resumes) after login — currently login shows a "pending approval" card.
+- P1: Lock backend CORS from `["*"]` to allow-list.
+- P2: Recruiter signup server-side validation (mobile/zip formats), password strength, login rate limiting.
+- P2: Public candidate/company profile pages; recruiter forgot-password.
+- P2: Refactor large server.py into routers.
 
 ## Credentials
-admin@hireme.in / admin123
+- Admin: admin@hireme.in / admin123
+- Recruiter demo: recruiter@acme.com / pass1234 (status pending)
