@@ -437,7 +437,139 @@ async def delete_candidate(cid: str, user=Depends(get_current_user)):
     return {'success': True}
 
 
+# ---------------- Recruiter (Company) Auth ----------------
+recruiter_security = HTTPBearer(auto_error=True)
+
+
+class RecruiterSignup(BaseModel):
+    accountType: str = 'company'
+    companyName: str
+    fullName: str
+    email: str
+    password: str
+    mobile: str
+    designation: str
+    industry: Optional[str] = None
+    subIndustry: Optional[str] = None
+    addressLine1: Optional[str] = None
+    addressLine2: Optional[str] = None
+    state: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = 'India'
+    zipCode: Optional[str] = None
+
+
+class RecruiterLogin(BaseModel):
+    email: str
+    password: str
+
+
+def make_recruiter_token(company_id: str, email: str) -> str:
+    payload = {
+        'sub': company_id,
+        'email': email,
+        'type': 'recruiter',
+        'exp': datetime.utcnow() + timedelta(hours=JWT_EXPIRE_HOURS),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
+
+
+def public_company(doc: dict) -> dict:
+    doc = clean(dict(doc))
+    doc.pop('password', None)
+    return doc
+
+
+async def get_current_company(creds: HTTPAuthorizationCredentials = Depends(recruiter_security)):
+    try:
+        payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail='Invalid or expired token')
+    if payload.get('type') != 'recruiter':
+        raise HTTPException(status_code=401, detail='Invalid token type')
+    company = await db.companies.find_one({'id': payload.get('sub')})
+    if not company:
+        raise HTTPException(status_code=401, detail='Company not found')
+    return company
+
+
+@api_router.post('/recruiter/signup')
+async def recruiter_signup(data: RecruiterSignup):
+    email = data.email.lower().strip()
+    if not email or not data.password:
+        raise HTTPException(status_code=400, detail='Email and password are required')
+    if await db.companies.find_one({'email': email}):
+        raise HTTPException(status_code=409, detail='An account with this email already exists')
+    doc = {
+        'id': str(uuid.uuid4()),
+        'accountType': data.accountType,
+        'name': data.companyName.strip(),
+        'companyName': data.companyName.strip(),
+        'fullName': data.fullName.strip(),
+        'email': email,
+        'password': pwd_ctx.hash(data.password),
+        'mobile': data.mobile.strip(),
+        'designation': data.designation.strip(),
+        'industry': data.industry,
+        'subIndustry': data.subIndustry,
+        'addressLine1': data.addressLine1,
+        'addressLine2': data.addressLine2,
+        'state': data.state,
+        'city': data.city,
+        'country': data.country,
+        'zipCode': data.zipCode,
+        'status': 'pending',
+        'trending': False,
+        'updatedBy': 'Recruiter Signup',
+        'updatedAt': now_display(),
+        'created_at': datetime.utcnow().isoformat(),
+    }
+    await db.companies.insert_one(doc)
+    token = make_recruiter_token(doc['id'], email)
+    return {'access_token': token, 'token_type': 'bearer', 'company': public_company(doc)}
+
+
+@api_router.post('/recruiter/login')
+async def recruiter_login(data: RecruiterLogin):
+    email = data.email.lower().strip()
+    company = await db.companies.find_one({'email': email})
+    if not company or not company.get('password') or not pwd_ctx.verify(data.password, company['password']):
+        raise HTTPException(status_code=401, detail='Invalid email or password')
+    token = make_recruiter_token(company['id'], email)
+    return {'access_token': token, 'token_type': 'bearer', 'company': public_company(company)}
+
+
+@api_router.get('/recruiter/me')
+async def recruiter_me(company=Depends(get_current_company)):
+    return public_company(company)
+
+
 # ---------------- Public (homepage) ----------------
+@api_router.get('/public/industries')
+async def public_industries():
+    rows = await db.industries.find().sort('name', 1).to_list(1000)
+    return [{'name': r['name']} for r in rows]
+
+
+@api_router.get('/public/sub-industries')
+async def public_sub_industries():
+    rows = await db.sub_industries.find().sort('name', 1).to_list(2000)
+    return [{'name': r['name'], 'industry': r.get('industry')} for r in rows]
+
+
+@api_router.get('/public/states')
+async def public_states():
+    rows = await db.states.find().sort('name', 1).to_list(200)
+    return [{'name': r['name']} for r in rows]
+
+
+@api_router.get('/public/cities')
+async def public_cities(state: Optional[str] = None):
+    q = {'state': state} if state else {}
+    rows = await db.cities.find(q).sort('name', 1).to_list(6000)
+    return [{'name': r['name'], 'state': r.get('state')} for r in rows]
+
+
 @api_router.get('/public/trending-cities')
 async def trending_cities():
     rows = await db.cities.find({'trending': True, 'status': True}).sort('created_at', 1).to_list(50)
@@ -530,6 +662,12 @@ async def seed():
             'role': 'Super Admin',
         })
         logger.info('Seeded superadmin')
+
+    # Unique email for recruiter/company accounts (sparse: admin-created companies have no email)
+    try:
+        await db.companies.create_index('email', unique=True, sparse=True)
+    except Exception as e:
+        logger.warning(f'companies.email index: {e}')
 
     # Education/Industry/Skill masters intentionally start EMPTY (admin adds their own).
 

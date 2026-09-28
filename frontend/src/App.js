@@ -11,6 +11,8 @@ import CompaniesList from "./pages/admin/CompaniesList";
 import CompanyForm from "./pages/admin/CompanyForm";
 import CandidatesList from "./pages/admin/CandidatesList";
 import CandidateForm from "./pages/admin/CandidateForm";
+import RecruiterLanding from "./recruiter/RecruiterLanding";
+import RecruiterSignup from "./recruiter/RecruiterSignup";
 
 function RequireAuth({ children }) {
   const isAuthed = !!localStorage.getItem("hireme_token");
@@ -23,6 +25,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/recruiter" element={<RecruiterLanding />} />
+          <Route path="/recruiter/signup" element={<RecruiterSignup />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/admin/companies" element={<RequireAuth><CompaniesList /></RequireAuth>} />
